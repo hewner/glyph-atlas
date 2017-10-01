@@ -1,0 +1,7 @@
+[package]
+name = "rustgl"
+version = "0.1.0"
+authors = ["Michael Hewner <hewner@gmail.com>"]
+
+[dependencies]
+glium = "*"
