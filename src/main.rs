@@ -1,15 +1,16 @@
 #[macro_use]
 extern crate glium;
+extern crate image;
 
 use std::{thread, time};
 
 fn main() {
     use glium::{glutin, Surface};
 
-    let window_width = 1024;
-    let window_height = 768;
-    let char_width = 7;
-    let char_height = 9;
+    let window_width = 1900;
+    let window_height = 1000;
+    let char_width = 7*2;
+    let char_height = 9*2;
     let num_cols = window_width/char_width;
     let num_rows = window_height/char_height;
     
@@ -23,10 +24,11 @@ fn main() {
     #[derive(Copy, Clone)]
     struct V {
         pos: [f32; 2],
+        tex_o: [f32; 2],
         seed: f32
     }
 
-    implement_vertex!(V, pos, seed);
+    implement_vertex!(V, pos, tex_o, seed);
     let num_cells = num_rows*num_cols;
     let mut boxes = Vec::with_capacity(num_cells as usize);
     for r in 0..num_rows {
@@ -34,12 +36,12 @@ fn main() {
             let r = r as f32;
             let c = c as f32;
             let seed = (r*num_cols as f32 + c) / num_cells as f32;
-            boxes.push(V { pos : [c,r], seed : seed});
-            boxes.push(V { pos : [c, r+1.], seed : seed });
-            boxes.push(V { pos : [c+1.,r], seed : seed });
-            boxes.push(V { pos : [c,r+1.], seed : seed });
-            boxes.push(V { pos : [c+1.,r], seed : seed });
-            boxes.push(V { pos : [c+1., r+1.], seed : seed });
+            boxes.push(V { pos : [c,r], tex_o: [0.,1.], seed : seed});
+            boxes.push(V { pos : [c, r+1.], tex_o: [0.,0.], seed : seed });
+            boxes.push(V { pos : [c+1.,r], tex_o: [1.,1.], seed : seed });
+            boxes.push(V { pos : [c,r+1.], tex_o: [0.,0.], seed : seed });
+            boxes.push(V { pos : [c+1.,r], tex_o: [1.,1.], seed : seed });
+            boxes.push(V { pos : [c+1., r+1.], tex_o: [1.,0.], seed : seed });
         }
     }
     
@@ -50,13 +52,16 @@ fn main() {
     let vertex_shader_src = r#"
         #version 140
         in vec2 pos;
+        in vec2 tex_o;
         in float seed;
         out float fseed;
+        out vec2 ftex_o;
         uniform mat4 matrix;
 
 
         void main() {
             fseed = seed;
+            ftex_o = tex_o;
             gl_Position = matrix * vec4(pos[0], pos[1], 0.0, 1.0);
         }
     "#;
@@ -64,8 +69,11 @@ fn main() {
     let fragment_shader_src = r#"
         #version 140
         in float fseed;
+        in vec2 ftex_o;
         out vec4 color;
         uniform float t;
+
+        uniform sampler2D tex;
 
         float rand(float fseed, float seed){
              return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
@@ -73,14 +81,25 @@ fn main() {
 
         void main() {
             float r = rand(fseed, t);
+            int letter = int(r * 52);
+            float totalxOffset = (letter + ftex_o[0])/52.0;
             float g = rand(fseed, r);
             float b = rand(fseed, g);
-            color = vec4(r, g, b, 1.0);
+            //color = vec4(r, g, b, 1.0);
+            color = texture(tex, vec2(totalxOffset, ftex_o[1])); 
         }
     "#;
 
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
+    use std::io::Cursor;
+    let image = image::load(Cursor::new(&include_bytes!("../proggyclean.png")[..]),
+                            image::PNG).unwrap().to_rgba();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
+
+    
     let mut closed = false;
     let mut t: f32 = 0.0;
     let matrix =  [
@@ -96,7 +115,8 @@ fn main() {
         t += 0.01;
         if t > 1. { t = 0.; }
         let uniforms = uniform! { t: t,
-                                  matrix : matrix
+                                  matrix : matrix,
+                                  tex : &texture
         };
         target.clear_color(0.0, 0.0, 1.0, 1.0);
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
