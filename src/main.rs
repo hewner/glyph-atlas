@@ -1,7 +1,10 @@
 #[macro_use]
 extern crate glium;
 extern crate image;
+extern crate font;
+extern crate fnv;
 
+use font::{Rasterize, FontDesc, GlyphKey};
 use std::{thread, time};
 
 fn main() {
@@ -9,10 +12,28 @@ fn main() {
 
     let window_width = 1900;
     let window_height = 1000;
-    let char_width = 7*2;
-    let char_height = 9*2;
+
+    ///**************FONTS
+    let mut rasterizer = font::Rasterizer::new(108., 110., 1., false).unwrap();
+
+    let font = FontDesc::new(String::from("monospace"),
+                             font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
+    let size = font::Size::new(8.);
+    let regular = rasterizer.load_font(&font, size).unwrap();
+
+    let mut glyph = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'Q', size: size }).unwrap();
+
+    glyph.buf.reverse();
+    let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
+
+    let char_width = glyph.width as u32; //7*2;
+    let char_height = glyph.height as u32; //9*2;
     let num_cols = window_width/char_width;
     let num_rows = window_height/char_height;
+
+    //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
+    ///***************END FONTS
+
     
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
@@ -73,7 +94,7 @@ fn main() {
         out vec4 color;
         uniform float t;
 
-        uniform sampler2D tex;
+        uniform sampler2DArray tex;
 
         float rand(float fseed, float seed){
              return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
@@ -86,19 +107,28 @@ fn main() {
             float g = rand(fseed, r);
             float b = rand(fseed, g);
             //color = vec4(r, g, b, 1.0);
-            color = texture(tex, vec2(totalxOffset, ftex_o[1])); 
+            //color = texture(tex, vec3(totalxOffset, ftex_o[1], 1.));
+            color = texture(tex, vec3(ftex_o[0], ftex_o[1], 0.)); 
         }
     "#;
 
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
+
 
     use std::io::Cursor;
     let image = image::load(Cursor::new(&include_bytes!("../proggyclean.png")[..]),
                             image::PNG).unwrap().to_rgba();
     let image_dimensions = image.dimensions();
     let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
 
+    let image2 = image::load(Cursor::new(&include_bytes!("../proggyclean2.png")[..]),
+                            image::PNG).unwrap().to_rgba();
+    let image_dimensions2 = image2.dimensions();
+    let image2 = glium::texture::RawImage2d::from_raw_rgba_reversed(&image2.into_raw(), image_dimensions2);
+
+//    let textures = vec![image, image2];
+    let textures = vec![foo];
+    let texture = glium::texture::SrgbTexture2dArray::new(&display, textures).unwrap();
     
     let mut closed = false;
     let mut t: f32 = 0.0;

@@ -6,3 +6,5 @@ authors = ["Michael Hewner <hewner@gmail.com>"]
 [dependencies]
 glium = "*"
 image = "*"
+font = { path = "./font" }
+fnv = "1"
