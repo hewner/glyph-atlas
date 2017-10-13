@@ -7,30 +7,36 @@ extern crate fnv;
 use font::{Rasterize, FontDesc, GlyphKey};
 use std::{thread, time};
 
+mod auto_glyph;
+
+use auto_glyph::*;
+
 fn main() {
+
+    //TODO: Allow character loads
+    
     use glium::{glutin, Surface};
 
-    let window_width = 1900;
-    let window_height = 1000;
+    let window_width = 1900.;
+    let window_height = 1000.;
 
     ///**************FONTS
     let mut rasterizer = font::Rasterizer::new(108., 110., 1., false).unwrap();
 
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
-    let size = font::Size::new(8.);
+    let size = font::Size::new(14.);
     let regular = rasterizer.load_font(&font, size).unwrap();
 
-    let mut glyph = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'Q', size: size }).unwrap();
+    let mut glyph = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'm', size: size }).unwrap();
+    let metrics = rasterizer.metrics(regular).unwrap();
 
-    glyph.buf.reverse();
-    let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
-
-    let char_width = glyph.width as u32; //7*2;
-    let char_height = glyph.height as u32; //9*2;
-    let num_cols = window_width/char_width;
-    let num_rows = window_height/char_height;
-
+    let char_width = metrics.average_advance;
+    let char_height = metrics.line_height;
+    let num_cols = (window_width/char_width) as u32;
+    let num_rows = (window_height/char_height) as u32;
+    println!("left {} top {} width {} height {}", glyph.left, glyph.top, char_width, char_height);
+    
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
     ///***************END FONTS
 
@@ -38,7 +44,7 @@ fn main() {
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
         .with_title("Hello world!")
-        .with_dimensions(window_width, window_height);
+        .with_dimensions(window_width as u32, window_height as u32);
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
@@ -51,22 +57,20 @@ fn main() {
 
     implement_vertex!(V, pos, tex_o, seed);
     let num_cells = num_rows*num_cols;
-    let mut boxes = Vec::with_capacity(num_cells as usize);
+    let mut boxes = VertexList::with_capacity(6*num_cells as usize);
     for r in 0..num_rows {
         for c in 0..num_cols {
             let r = r as f32;
             let c = c as f32;
-            let seed = (r*num_cols as f32 + c) / num_cells as f32;
-            boxes.push(V { pos : [c,r], tex_o: [0.,1.], seed : seed});
-            boxes.push(V { pos : [c, r+1.], tex_o: [0.,0.], seed : seed });
-            boxes.push(V { pos : [c+1.,r], tex_o: [1.,1.], seed : seed });
-            boxes.push(V { pos : [c,r+1.], tex_o: [0.,0.], seed : seed });
-            boxes.push(V { pos : [c+1.,r], tex_o: [1.,1.], seed : seed });
-            boxes.push(V { pos : [c+1., r+1.], tex_o: [1.,0.], seed : seed });
+            let ag = AutoGlyph::new(&metrics, &glyph, r, c);
+            ag.addToVertexList(&mut boxes);
         }
     }
     
+    glyph.buf.reverse();
+    let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
 
+    
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
@@ -108,7 +112,10 @@ fn main() {
             float b = rand(fseed, g);
             //color = vec4(r, g, b, 1.0);
             //color = texture(tex, vec3(totalxOffset, ftex_o[1], 1.));
-            color = texture(tex, vec3(ftex_o[0], ftex_o[1], 0.)); 
+            vec4 fg = vec4(0.,0.,0.,1.);
+            vec4 bg = vec4(1.,1.,1.,1.);
+            vec4 alpha = texture(tex, vec3(ftex_o[0], ftex_o[1], 0.));
+            color = fg*alpha + (1-alpha)*bg;
         }
     "#;
 
@@ -128,13 +135,17 @@ fn main() {
 
 //    let textures = vec![image, image2];
     let textures = vec![foo];
-    let texture = glium::texture::SrgbTexture2dArray::new(&display, textures).unwrap();
+    let texture = glium::texture::Texture2dArray::new(&display, textures).unwrap();
     
     let mut closed = false;
     let mut t: f32 = 0.0;
+
+    let num_cols_f = window_width as f32/char_width as f32;
+    let num_rows_f = window_height as f32/char_height as f32;
+
     let matrix =  [
-        [2.0/num_cols as f32, 0.0, 0.0, 0.0],
-        [0.0, -2.0/num_rows as f32, 0.0, 0.0],
+        [2.0/num_cols_f as f32, 0.0, 0.0, 0.0],
+        [0.0, -2.0/num_rows_f as f32, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [-1.0 , 1.0, 0.0, 1.0f32],
     ];
@@ -153,7 +164,7 @@ fn main() {
                     &Default::default()).unwrap();
         target.finish().unwrap();
 
-        println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
+        //println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
         //let ten_millis = time::Duration::from_millis(500);
         //thread::sleep(ten_millis);
         events_loop.poll_events(|event| {

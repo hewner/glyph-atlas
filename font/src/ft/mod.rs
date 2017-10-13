@@ -196,8 +196,8 @@ impl FreeTypeRasterizer {
 
         face.load_glyph(index as u32, freetype::face::TARGET_LIGHT)?;
         let glyph = face.glyph();
-        glyph.render_glyph(freetype::render_mode::RenderMode::Lcd)?;
-
+        //glyph.render_glyph(freetype::render_mode::RenderMode::Lcd)?;
+        glyph.render_glyph(freetype::render_mode::RenderMode::Normal)?;
         unsafe {
             let ft_lib = self.library.raw();
             freetype::ffi::FT_Library_SetLcdFilter(
