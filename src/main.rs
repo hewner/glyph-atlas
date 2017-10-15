@@ -8,8 +8,10 @@ use font::{Rasterize, FontDesc, GlyphKey};
 use std::{thread, time};
 
 mod auto_glyph;
+mod glyph_atlas;
 
 use auto_glyph::*;
+use glyph_atlas::*;
 
 fn main() {
 
@@ -26,17 +28,7 @@ fn main() {
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
     let size = font::Size::new(14.);
-    let regular = rasterizer.load_font(&font, size).unwrap();
 
-    let mut glyph = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'm', size: size }).unwrap();
-    let metrics = rasterizer.metrics(regular).unwrap();
-
-    let char_width = metrics.average_advance;
-    let char_height = metrics.line_height;
-    let num_cols = (window_width/char_width) as u32;
-    let num_rows = (window_height/char_height) as u32;
-    println!("left {} top {} width {} height {}", glyph.left, glyph.top, char_width, char_height);
-    
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
     ///***************END FONTS
 
@@ -48,28 +40,31 @@ fn main() {
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
-    #[derive(Copy, Clone)]
-    struct V {
-        pos: [f32; 2],
-        tex_o: [f32; 2],
-        seed: f32
-    }
+    let mut atlas = GlyphAtlas::new(rasterizer, &font, size, &display);
+    
+    let char_width = atlas.char_width();
+    let char_height = atlas.char_height();
+    let num_cols = (window_width/char_width) as u32;
+    let num_rows = (window_height/char_height) as u32;
 
-    implement_vertex!(V, pos, tex_o, seed);
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
     for r in 0..num_rows {
         for c in 0..num_cols {
             let r = r as f32;
             let c = c as f32;
-            let ag = AutoGlyph::new(&metrics, &glyph, r, c);
+            let atlas_entry = atlas.get_entry(&display, 'F');
+            let ag = AutoGlyph::new2(&atlas_entry, r, c);
             ag.addToVertexList(&mut boxes);
         }
     }
     
-    glyph.buf.reverse();
-    let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
+    //glyph.buf.reverse();
+    //let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
 
+    // let mut glyph2 = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'F', size: size }).unwrap();
+    // let foo2 = glium::texture::RawImage2d::from_raw_rgb(glyph2.buf, (glyph2.width as u32, glyph2.height as u32));
+    
     
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -122,20 +117,13 @@ fn main() {
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
 
-    use std::io::Cursor;
-    let image = image::load(Cursor::new(&include_bytes!("../proggyclean.png")[..]),
-                            image::PNG).unwrap().to_rgba();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-
-    let image2 = image::load(Cursor::new(&include_bytes!("../proggyclean2.png")[..]),
-                            image::PNG).unwrap().to_rgba();
-    let image_dimensions2 = image2.dimensions();
-    let image2 = glium::texture::RawImage2d::from_raw_rgba_reversed(&image2.into_raw(), image_dimensions2);
-
-//    let textures = vec![image, image2];
-    let textures = vec![foo];
-    let texture = glium::texture::Texture2dArray::new(&display, textures).unwrap();
+    //let textures = vec![foo];
+    //let texture = glium::texture::Texture2dArray::new(&display, textures).unwrap();
+    // let src_texture = glium::texture::Texture2d::new(&display, foo2).unwrap();
+    // let fb = glium::framebuffer::SimpleFrameBuffer::new(&display, texture.layer(0).unwrap().main_level()).unwrap();
+    // let rect = glium::Rect {left: 0, bottom: 0, width: glyph2.width as u32, height: glyph2.height as u32};
+    // let rect2 = glium::BlitTarget {left: glyph2.width as u32, bottom: glyph2.height as u32, width: -glyph2.width, height: -glyph2.height};
+    // src_texture.as_surface().blit_color(&rect, &fb, &rect2, glium::uniforms::MagnifySamplerFilter::Nearest);
     
     let mut closed = false;
     let mut t: f32 = 0.0;
@@ -157,7 +145,7 @@ fn main() {
         if t > 1. { t = 0.; }
         let uniforms = uniform! { t: t,
                                   matrix : matrix,
-                                  tex : &texture
+                                  tex : atlas.texture()
         };
         target.clear_color(0.0, 0.0, 1.0, 1.0);
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
