@@ -51,9 +51,15 @@ fn main() {
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
     for r in 0..num_rows {
         for c in 0..num_cols {
+            let atlas_entry;
+            if((r + c) % 2 == 0) {
+                atlas_entry = atlas.get_entry(&display, 'F');
+            } else {
+                atlas_entry = atlas.get_entry(&display, 'A');
+            }
+            
             let r = r as f32;
             let c = c as f32;
-            let atlas_entry = atlas.get_entry(&display, 'F');
             let ag = AutoGlyph::new2(&atlas_entry, r, c);
             ag.addToVertexList(&mut boxes);
         }

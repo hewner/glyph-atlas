@@ -38,10 +38,10 @@ impl AutoGlyph {
     pub fn new2(entry:&AtlasEntry, r:f32, c:f32) -> AutoGlyph {        
         //println!("height {} top {}", rg.height, rg.top);
         AutoGlyph { r: r, c: c,
-                    tex_left: entry.left,
-                    tex_right: entry.right,
-                    tex_top: entry.top,
-                    tex_bottom: entry.bottom
+                    tex_left: entry.tex_left(),
+                    tex_right: entry.tex_right(),
+                    tex_top: entry.tex_top(),
+                    tex_bottom: entry.tex_bottom()
         }
     }
 
