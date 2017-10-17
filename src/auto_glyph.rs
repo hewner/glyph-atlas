@@ -4,6 +4,8 @@ use glyph_atlas::AtlasEntry;
 pub struct AutoGlyph {
     r:f32,
     c:f32,
+    width:f32, //as fraction of cell
+    height:f32, //as fraction of cell
     tex_left:f32, 
     tex_top:f32,
     tex_right:f32,
@@ -23,25 +25,16 @@ pub type VertexList = Vec<AutoGlyphV>;
 
 
 impl AutoGlyph {
-    // pub fn new(metrics : &Metrics, rg: &RasterizedGlyph, r:f32, c:f32) -> AutoGlyph {
-    //     let offset_w = rg.left as f32/metrics.average_advance as f32;
-    //     let offset_h = rg.top as f32/metrics.line_height as f32;
-    //     let newR = r + offset_h;
-    //     let newC = c + offset_w;
-        
-    //     //println!("height {} top {}", rg.height, rg.top);
-    //     AutoGlyph { r: newR, c: newC,
-    //                 w: rg.width as f32/metrics.average_advance as f32,
-    //                 h: rg.height as f32/metrics.line_height as f32}
-    // }
-
     pub fn new2(entry:&AtlasEntry, r:f32, c:f32) -> AutoGlyph {        
-        //println!("height {} top {}", rg.height, rg.top);
-        AutoGlyph { r: r, c: c,
+
+        AutoGlyph { r: r + entry.descent() + 1. - entry.top()
+                    , c: c + entry.left(),
                     tex_left: entry.tex_left(),
                     tex_right: entry.tex_right(),
                     tex_top: entry.tex_top(),
-                    tex_bottom: entry.tex_bottom()
+                    tex_bottom: entry.tex_bottom(),
+                    width: entry.width(),
+                    height: entry.height()
         }
     }
 
@@ -54,8 +47,8 @@ impl AutoGlyph {
         let r = self.tex_right;
         let t = self.tex_top;
         let b = self.tex_bottom;
-        let w = 1.; //self.w;
-        let h = 1.; //self.h;
+        let w = self.width;
+        let h = self.height;
         list.push(AutoGlyphV { pos : [col,row], tex_o: [l,t], seed : seed});
         list.push(AutoGlyphV { pos : [col, row+h], tex_o: [l,b], seed : seed });
         list.push(AutoGlyphV { pos : [col+w,row], tex_o: [r,t], seed : seed });

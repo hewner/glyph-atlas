@@ -52,14 +52,14 @@ fn main() {
     for r in 0..num_rows {
         for c in 0..num_cols {
             let atlas_entry;
-            if((r + c) % 2 == 0) {
-                atlas_entry = atlas.get_entry(&display, 'F');
+            if (r + c) % 2 == 0 {
+                atlas_entry = atlas.get_entry(&display, 'Q');
             } else {
-                atlas_entry = atlas.get_entry(&display, 'A');
+                atlas_entry = atlas.get_entry(&display, 'a');
             }
             
             let r = r as f32;
-            let c = c as f32;
+            let c = c as f32; 
             let ag = AutoGlyph::new2(&atlas_entry, r, c);
             ag.addToVertexList(&mut boxes);
         }
@@ -123,14 +123,6 @@ fn main() {
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
 
-    //let textures = vec![foo];
-    //let texture = glium::texture::Texture2dArray::new(&display, textures).unwrap();
-    // let src_texture = glium::texture::Texture2d::new(&display, foo2).unwrap();
-    // let fb = glium::framebuffer::SimpleFrameBuffer::new(&display, texture.layer(0).unwrap().main_level()).unwrap();
-    // let rect = glium::Rect {left: 0, bottom: 0, width: glyph2.width as u32, height: glyph2.height as u32};
-    // let rect2 = glium::BlitTarget {left: glyph2.width as u32, bottom: glyph2.height as u32, width: -glyph2.width, height: -glyph2.height};
-    // src_texture.as_surface().blit_color(&rect, &fb, &rect2, glium::uniforms::MagnifySamplerFilter::Nearest);
-    
     let mut closed = false;
     let mut t: f32 = 0.0;
 

@@ -51,7 +51,11 @@ impl GlyphAtlas {
     }
 
     pub fn char_height(&self) -> f64 {
-        self.rasterizer.metrics(self.font).unwrap().line_height
+         self.rasterizer.metrics(self.font).unwrap().line_height
+    }
+
+    fn char_descent(&self) -> f32 {
+         self.rasterizer.metrics(self.font).unwrap().descent
     }
 
 
@@ -85,7 +89,16 @@ impl GlyphAtlas {
             left:self.current_h_pos,
             right:self.current_h_pos + slot_width,
             top:self.current_v_pos + slot_height,
-            bottom:self.current_v_pos 
+            bottom:self.current_v_pos,
+
+            rg_top: 0,
+            rg_left: 0,
+
+            font_height: self.char_height(),
+            font_width: self.char_width(),
+            font_descent: self.char_descent()
+                
+
         };
         self.line_height = max(self.line_height, slot_height);
         self.current_h_pos += slot_width;
@@ -104,8 +117,10 @@ impl GlyphAtlas {
             let image = glium::texture::RawImage2d::from_raw_rgb(glyph.buf,
                                                                  (glyph.width as u32, glyph.height as u32));
             let src_texture = glium::texture::Texture2d::new(display, image).unwrap();
-            let entry = self.allocate_next_slot(glyph.width as u32, glyph.height as u32);
-
+            let mut entry = self.allocate_next_slot(glyph.width as u32, glyph.height as u32);
+            entry.rg_top = glyph.top;
+            entry.rg_left = glyph.left;
+            println!("L{} T{} W{} H{}", glyph.left, glyph.top, glyph.width, glyph.height);
             let fb = glium::framebuffer::SimpleFrameBuffer::new(display,
                                                                 self.texture_atlas.layer(entry.page).unwrap().main_level()).unwrap();
             let rect = glium::Rect {left: 0, bottom: 0,
@@ -119,6 +134,7 @@ impl GlyphAtlas {
         }
     }
 
+    
     pub fn texture(&self) -> &Texture2dArray {
         &self.texture_atlas
     }
@@ -130,7 +146,14 @@ pub struct AtlasEntry {
     left:u32,
     right:u32,
     top:u32,
-    bottom:u32
+    bottom:u32,
+
+    rg_top: i32,
+    rg_left: i32,
+
+    font_height: f64,
+    font_width: f64,
+    font_descent: f32
 }
 
 impl AtlasEntry {
@@ -139,7 +162,7 @@ impl AtlasEntry {
     }
 
     pub fn tex_right(&self) -> f32 {
-        self.right as f32/TEXTURE_SIZE as f32
+        self.right as f32/TEXTURE_SIZE as f32 
     }
 
     pub fn tex_top(&self) -> f32 {
@@ -150,5 +173,25 @@ impl AtlasEntry {
         self.bottom as f32/TEXTURE_SIZE as f32
     }
 
+    pub fn width(&self) -> f32 {
+        (self.right - self.left) as f32/self.font_width as f32
+    }
+
+    pub fn height(&self) -> f32 {
+        (self.top - self.bottom) as f32/self.font_height as f32
+    }
+
+    pub fn left(&self) -> f32 {
+        self.rg_left as f32/self.font_width as f32
+    }
+
+    pub fn top(&self) -> f32 {
+        self.rg_top as f32/self.font_height as f32
+    }
+
+    pub fn descent(&self) -> f32 {
+        println!("des{}",self.font_descent);
+        self.font_descent as f32/self.font_height as f32
+    }
 
 }
