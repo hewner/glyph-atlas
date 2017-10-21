@@ -1,4 +1,4 @@
-use font::{Metrics, RasterizedGlyph};
+
 use glyph_atlas::AtlasEntry;
 
 pub struct AutoGlyph {
@@ -44,7 +44,7 @@ impl AutoGlyph {
     }
 
     
-    pub fn addToVertexList(&self, list:&mut  VertexList) {
+    pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
         let seed = 7.;
         let row = self.r;
         let col = self.c;
@@ -61,21 +61,10 @@ impl AutoGlyph {
         list.push(AutoGlyphV { pos : [col+w,row], bg : 0, tex_o: [r,b], seed : seed });
         list.push(AutoGlyphV { pos : [col+w, row+h], bg : 0, tex_o: [r,t], seed : seed });
 
-        let row = self.raw_r;
-        let col = self.raw_c;
-        let w = 1.;
-        let h = 1.;
-
-        //list.push(AutoGlyphV { pos : [col,row], bg : 1, tex_o: [0.,0.], seed : seed});
-        //list.push(AutoGlyphV { pos : [col, row+h], bg : 1, tex_o: [0.,0.], seed : seed });
-        //list.push(AutoGlyphV { pos : [col+w,row], bg : 1, tex_o: [0.,0.], seed : seed });
-        //list.push(AutoGlyphV { pos : [col,row+h], bg : 1, tex_o: [0.,0.], seed : seed });
-        //list.push(AutoGlyphV { pos : [col+w,row], bg : 1, tex_o: [0.,0.], seed : seed });
-        //list.push(AutoGlyphV { pos : [col+w, row+h], bg : 1, tex_o: [0.,0.], seed : seed });
 
     }
 
-    pub fn addBackgroundToVertexList(&self, list:&mut  VertexList) {
+    pub fn add_background_to_vertex_list(&self, list:&mut  VertexList) {
         let seed = 7.;
         let row = self.raw_r;
         let col = self.raw_c;

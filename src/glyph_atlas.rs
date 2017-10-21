@@ -1,6 +1,6 @@
 use glium::{self, Surface};
 use glium::texture::{Texture2dArray};
-use font::{self, Rasterize, Rasterizer, FontDesc, FontKey, GlyphKey, RasterizedGlyph};
+use font::{self, Rasterize, Rasterizer, FontDesc, FontKey, GlyphKey};
 use std::collections::HashMap;
 use std::cmp::max;
 
@@ -111,7 +111,7 @@ impl GlyphAtlas {
         if self.map.contains_key(&c) {
             self.map.get(&c).unwrap().clone()
         } else {
-            let mut glyph = self.rasterizer.get_glyph(&GlyphKey { font_key: self.font,
+            let glyph = self.rasterizer.get_glyph(&GlyphKey { font_key: self.font,
                                                                   c: c, size:
                                                                   self.size }).unwrap();
             let image = glium::texture::RawImage2d::from_raw_rgb(glyph.buf,
@@ -120,7 +120,7 @@ impl GlyphAtlas {
             let mut entry = self.allocate_next_slot(glyph.width as u32, glyph.height as u32);
             entry.rg_top = glyph.top;
             entry.rg_left = glyph.left;
-            println!("L{} T{} W{} H{}", glyph.left, glyph.top, glyph.width, glyph.height);
+            //println!("L{} T{} W{} H{}", glyph.left, glyph.top, glyph.width, glyph.height);
             let fb = glium::framebuffer::SimpleFrameBuffer::new(display,
                                                                 self.texture_atlas.layer(entry.page).unwrap().main_level()).unwrap();
             let rect = glium::Rect {left: 0, bottom: 0,
@@ -190,7 +190,7 @@ impl AtlasEntry {
     }
 
     pub fn descent(&self) -> f32 {
-        println!("des{}",self.font_descent);
+        //println!("des{}",self.font_descent);
         self.font_descent as f32/self.font_height as f32
     }
 

@@ -4,8 +4,8 @@ extern crate image;
 extern crate font;
 extern crate fnv;
 
-use font::{Rasterize, FontDesc, GlyphKey};
-use std::{thread, time};
+use font::{Rasterize, FontDesc};
+use std::{time};
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -23,7 +23,7 @@ fn main() {
     let window_height = 1000.;
 
     ///**************FONTS
-    let mut rasterizer = font::Rasterizer::new(108., 110., 1., false).unwrap();
+    let rasterizer = font::Rasterizer::new(108., 110., 1., false).unwrap();
 
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
@@ -60,10 +60,10 @@ fn main() {
             let c = c as f32; 
             let ag = AutoGlyph::new(&atlas_entry, r, c);
             //if(r <= 0. && c == 2.) {
-                ag.addBackgroundToVertexList(&mut boxes);
+                ag.add_background_to_vertex_list(&mut boxes);
             //}
 
-            ag.addToVertexList(&mut boxes);
+            ag.add_to_vertex_list(&mut boxes);
         }
     }
     
@@ -130,7 +130,6 @@ fn main() {
 
 
     let mut closed = false;
-    let mut t: f32 = 0.0;
 
     let num_cols_f = window_width as f32/char_width as f32;
     let num_rows_f = window_height as f32/char_height as f32;
@@ -141,12 +140,14 @@ fn main() {
         [0.0, 0.0, 1.0, 0.0],
         [-1.0 , 1.0, 0.0, 1.0f32],
     ];
-    
+
+    let start = time::Instant::now();
     while !closed {
-        let now = time::Instant::now();
+
         let mut target = display.draw();
-        t += 0.01;
-        if t > 1. { t = 0.; }
+        let now = time::Instant::now();
+        let dur = now - start;
+        let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
         let uniforms = uniform! { t: t,
                                   matrix : matrix,
                                   tex : atlas.texture()
