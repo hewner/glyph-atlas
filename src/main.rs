@@ -52,25 +52,20 @@ fn main() {
     for r in 0..num_rows {
         for c in 0..num_cols {
             let atlas_entry;
-            if (r + c) % 2 == 0 {
-                atlas_entry = atlas.get_entry(&display, 'Q');
-            } else {
-                atlas_entry = atlas.get_entry(&display, 'a');
-            }
+            let letter = 'A' as u8 + ((c + r) % 58) as u8;
+            atlas_entry = atlas.get_entry(&display, letter as char);
+
             
             let r = r as f32;
             let c = c as f32; 
-            let ag = AutoGlyph::new2(&atlas_entry, r, c);
+            let ag = AutoGlyph::new(&atlas_entry, r, c);
+            //if(r <= 0. && c == 2.) {
+                ag.addBackgroundToVertexList(&mut boxes);
+            //}
+
             ag.addToVertexList(&mut boxes);
         }
     }
-    
-    //glyph.buf.reverse();
-    //let foo = glium::texture::RawImage2d::from_raw_rgb(glyph.buf, (glyph.width as u32, glyph.height as u32));
-
-    // let mut glyph2 = rasterizer.get_glyph(&GlyphKey { font_key: regular, c: 'F', size: size }).unwrap();
-    // let foo2 = glium::texture::RawImage2d::from_raw_rgb(glyph2.buf, (glyph2.width as u32, glyph2.height as u32));
-    
     
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -80,21 +75,27 @@ fn main() {
         in vec2 pos;
         in vec2 tex_o;
         in float seed;
+        in int bg;
         out float fseed;
         out vec2 ftex_o;
+        flat out int fbg;
         uniform mat4 matrix;
 
 
         void main() {
             fseed = seed;
             ftex_o = tex_o;
+            fbg = bg;
+     
             gl_Position = matrix * vec4(pos[0], pos[1], 0.0, 1.0);
+     
         }
     "#;
 
     let fragment_shader_src = r#"
         #version 140
         in float fseed;
+        flat in int fbg;
         in vec2 ftex_o;
         out vec4 color;
         uniform float t;
@@ -113,10 +114,15 @@ fn main() {
             float b = rand(fseed, g);
             //color = vec4(r, g, b, 1.0);
             //color = texture(tex, vec3(totalxOffset, ftex_o[1], 1.));
-            vec4 fg = vec4(0.,0.,0.,1.);
-            vec4 bg = vec4(1.,1.,1.,1.);
-            vec4 alpha = texture(tex, vec3(ftex_o[0], ftex_o[1], 0.));
-            color = fg*alpha + (1-alpha)*bg;
+            vec4 fg = vec4(1.,1.,1.,1.);
+            vec4 bg = vec4(0.,0.0,0.,1.);
+            if(fbg == 0) {
+                vec4 alpha = texture(tex, vec3(ftex_o[0], ftex_o[1], 0.));
+                color = fg*alpha + (1-alpha)*bg;
+                color = vec4(fg.xyz, alpha.x);
+            } else {
+                color = bg;
+            }
         }
     "#;
 
@@ -146,8 +152,12 @@ fn main() {
                                   tex : atlas.texture()
         };
         target.clear_color(0.0, 0.0, 1.0, 1.0);
+        let params = glium::DrawParameters {
+            blend: glium::draw_parameters::Blend::alpha_blending(),
+            .. Default::default()
+        };
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
-                    &Default::default()).unwrap();
+                    &params).unwrap();
         target.finish().unwrap();
 
         //println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));

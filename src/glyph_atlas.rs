@@ -101,7 +101,7 @@ impl GlyphAtlas {
 
         };
         self.line_height = max(self.line_height, slot_height);
-        self.current_h_pos += slot_width;
+        self.current_h_pos += slot_width + 1;
         return result;
     }
     
