@@ -8,3 +8,4 @@ glium = "*"
 image = "*"
 font = { path = "./font" }
 fnv = "1"
+rand = "0.3"

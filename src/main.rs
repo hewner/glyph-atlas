@@ -3,9 +3,11 @@ extern crate glium;
 extern crate image;
 extern crate font;
 extern crate fnv;
+extern crate rand;
 
 use font::{Rasterize, FontDesc};
 use std::{time};
+use rand::Rng;
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -49,6 +51,7 @@ fn main() {
 
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
+    let mut rng = rand::thread_rng();
     for r in 0..num_rows {
         for c in 0..num_cols {
             let atlas_entry;
@@ -58,12 +61,13 @@ fn main() {
             
             let r = r as f32;
             let c = c as f32; 
-            let ag = AutoGlyph::new(&atlas_entry, r, c);
-            //if(r <= 0. && c == 2.) {
-                ag.add_background_to_vertex_list(&mut boxes);
-            //}
-
+            let mut ag = AutoGlyph::new(&atlas_entry, r, c);
+            let r_vel = rng.gen::<f32>()*2. - 1.;
+            let c_vel = rng.gen::<f32>()*2. - 1.;
+            ag.set_vel(&r_vel,&c_vel);
+            ag.add_background_to_vertex_list(&mut boxes);
             ag.add_to_vertex_list(&mut boxes);
+            
         }
     }
     
@@ -75,6 +79,9 @@ fn main() {
         in vec2 pos;
         in vec2 tex_o;
         in float seed;
+        in float r_vel;
+        in float c_vel;
+        uniform float t;
         in int bg;
         out float fseed;
         out vec2 ftex_o;
@@ -86,8 +93,10 @@ fn main() {
             fseed = seed;
             ftex_o = tex_o;
             fbg = bg;
-     
-            gl_Position = matrix * vec4(pos[0], pos[1], 0.0, 1.0);
+            float x_offset = c_vel*t;
+            float y_offset = r_vel*t;
+
+            gl_Position = matrix * vec4(pos[0] + x_offset, pos[1] + y_offset, 0.0, 1.0);
      
         }
     "#;
