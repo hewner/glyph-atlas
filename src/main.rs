@@ -29,7 +29,7 @@ fn main() {
 
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
-    let size = font::Size::new(14.);
+    let size = font::Size::new(40.);
 
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
     ///***************END FONTS
@@ -52,24 +52,39 @@ fn main() {
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
     let mut rng = rand::thread_rng();
-    for r in 0..num_rows {
-        for c in 0..num_cols {
-            let atlas_entry;
-            let letter = 'A' as u8 + ((c + r) % 58) as u8;
-            atlas_entry = atlas.get_entry(&display, letter as char);
+    // for r in 0..num_rows {
+    //     for c in 0..num_cols {
+    //         let atlas_entry;
+    //         let letter = 'A' as u8 + ((c + r) % 58) as u8;
+    //         atlas_entry = atlas.get_entry(&display, letter as char);
 
             
-            let r = r as f32;
-            let c = c as f32; 
-            let mut ag = AutoGlyph::new(&atlas_entry, r, c);
-            let r_vel = rng.gen::<f32>()*2. - 1.;
-            let c_vel = rng.gen::<f32>()*2. - 1.;
-            ag.set_vel(&r_vel,&c_vel);
-            ag.add_background_to_vertex_list(&mut boxes);
-            ag.add_to_vertex_list(&mut boxes);
+    //         let r = r as f32;
+    //         let c = c as f32; 
+    //         let mut ag = AutoGlyph::new(&atlas_entry, r, c);
+    //         let r_vel = rng.gen::<f32>()*2. - 1.;
+    //         let c_vel = rng.gen::<f32>()*2. - 1.;
+    //         ag.set_vel(&r_vel,&c_vel);
+    //         ag.add_background_to_vertex_list(&mut boxes);
+    //         ag.add_to_vertex_list(&mut boxes);
             
-        }
-    }
+    //     }
+    // }
+
+
+    
+    // plot (x^3-2x^2+x)*.5 + (-2x^3+3x^2) + (x^3 - x^2)*-.6 from x=0 to 1
+    // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+
+    let atlas_entry = atlas.get_entry(&display, 'の');
+    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
+    ag.set_end(0.,0.);
+    //let r_vel = rng.gen::<f32>()*2. - 1.;
+    //let c_vel = rng.gen::<f32>()*2. - 1.;
+
+    ag.add_background_to_vertex_list(&mut boxes);
+    ag.add_to_vertex_list(&mut boxes);
+
     
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -77,10 +92,13 @@ fn main() {
     let vertex_shader_src = r#"
         #version 140
         in vec2 pos;
+        in vec2 end_pos;
         in vec2 tex_o;
         in float seed;
         in float r_vel;
         in float c_vel;
+        in float start_t;
+        in float end_t;
         uniform float t;
         in int bg;
         out float fseed;
@@ -88,15 +106,23 @@ fn main() {
         flat out int fbg;
         uniform mat4 matrix;
 
+        const int DONT_DRAW = -1;
 
         void main() {
             fseed = seed;
             ftex_o = tex_o;
             fbg = bg;
-            float x_offset = c_vel*t;
-            float y_offset = r_vel*t;
+            if(start_t >= t || end_t < t) {
+               fbg = DONT_DRAW;
+               gl_Position = vec4(0.,0.,0.,0.);
+            } else {
 
-            gl_Position = matrix * vec4(pos[0] + x_offset, pos[1] + y_offset, 0.0, 1.0);
+               float progress = (t - start_t)/(end_t - start_t); // a percent
+               float r = pos[0]*(1 - progress) + end_pos[0]*progress; 
+               float c = pos[1]*(1 - progress) + end_pos[1]*progress; 
+
+               gl_Position = matrix * vec4(r, c, 0.0, 1.0);
+            }
      
         }
     "#;
@@ -109,6 +135,7 @@ fn main() {
         out vec4 color;
         uniform float t;
 
+        const int DONT_DRAW = -1;
         uniform sampler2DArray tex;
 
         float rand(float fseed, float seed){
@@ -116,6 +143,9 @@ fn main() {
         }
 
         void main() {
+            if(fbg == DONT_DRAW) {
+               discard;
+            }
             float r = rand(fseed, t);
             int letter = int(r * 52);
             float totalxOffset = (letter + ftex_o[0])/52.0;
