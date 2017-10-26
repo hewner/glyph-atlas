@@ -78,7 +78,7 @@ fn main() {
 
     let atlas_entry = atlas.get_entry(&display, 'の');
     let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
-    ag.set_end(0.,0.);
+    ag.set_end(5.,20.);
     //let r_vel = rng.gen::<f32>()*2. - 1.;
     //let c_vel = rng.gen::<f32>()*2. - 1.;
 
@@ -117,7 +117,10 @@ fn main() {
                gl_Position = vec4(0.,0.,0.,0.);
             } else {
 
-               float progress = (t - start_t)/(end_t - start_t); // a percent
+               float p = (t - start_t)/(end_t - start_t); // percent of total time
+               float p_2 = p*p;
+               float p_3 = p_2*p;
+               float progress = (p_3-2*p_2+p)*.4 + (-2*p_3+3*p_2) + (p_3 - p_2)*-.2;
                float r = pos[0]*(1 - progress) + end_pos[0]*progress; 
                float c = pos[1]*(1 - progress) + end_pos[1]*progress; 
 
