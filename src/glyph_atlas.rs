@@ -1,22 +1,25 @@
 use glium::{self, Surface};
-use glium::texture::{Texture2dArray};
+use glium::texture::{Texture2dArray, Texture2d};
 use font::{self, Rasterize, Rasterizer, FontDesc, FontKey, GlyphKey};
 use std::collections::HashMap;
 use std::cmp::max;
 
 const TEXTURE_SIZE:u32 = 1024;
 const NUM_PAGES:u32 = 10;
+const NUM_ATTRIBUTES:usize = 2;
 
 pub struct GlyphAtlas {
     rasterizer: Rasterizer,
     font: FontKey,
     size: font::Size,
     texture_atlas: Texture2dArray,
+    attribute_textures: Texture2d,
     map: HashMap<char,AtlasEntry>,
     current_page:u32,
     current_h_pos:u32,
     current_v_pos:u32,
-    line_height:u32
+    line_height:u32,
+    next_index:u32
         
 }
 
@@ -33,16 +36,24 @@ impl GlyphAtlas {
                                             TEXTURE_SIZE,
                                             NUM_PAGES
         ).unwrap();
+
+
+        let attributes = Texture2d::empty(display,
+                             TEXTURE_SIZE,
+                             NUM_ATTRIBUTES as u32).unwrap();
         rasterizer.get_glyph(&GlyphKey { font_key: font, c: 'X', size: size }).unwrap();
         GlyphAtlas { rasterizer: rasterizer,
                      font: font,
                      size: size,
                      texture_atlas: texture,
+                     attribute_textures: attributes,
                      map: HashMap::new(),
                      current_h_pos: 0,
                      current_v_pos: 0,
                      line_height:0,
-                     current_page:0
+                     current_page:0,
+                     next_index:0
+                     
         }
     }
 
@@ -84,22 +95,17 @@ impl GlyphAtlas {
 
         }
 
-        let result = AtlasEntry {
-            page:self.current_page,
-            left:self.current_h_pos,
-            right:self.current_h_pos + slot_width,
-            top:self.current_v_pos + slot_height,
-            bottom:self.current_v_pos,
-
-            rg_top: 0,
-            rg_left: 0,
-
-            font_height: self.char_height(),
-            font_width: self.char_width(),
-            font_descent: self.char_descent()
-                
-
-        };
+        let mut result = AtlasEntry::new(self.next_index);
+        result.set_texture_positions(self.current_page,
+                                     self.current_h_pos,
+                                     self.current_h_pos + slot_width,
+                                     self.current_v_pos + slot_height,
+                                     self.current_v_pos);
+        result.set_font_data(self.char_width(),
+                             self.char_height(),
+                             self.char_descent());
+                             
+        self.next_index += 1;
         self.line_height = max(self.line_height, slot_height);
         self.current_h_pos += slot_width + 1;
         return result;
@@ -118,9 +124,8 @@ impl GlyphAtlas {
                                                                  (glyph.width as u32, glyph.height as u32));
             let src_texture = glium::texture::Texture2d::new(display, image).unwrap();
             let mut entry = self.allocate_next_slot(glyph.width as u32, glyph.height as u32);
-            entry.rg_top = glyph.top;
-            entry.rg_left = glyph.left;
-            //println!("L{} T{} W{} H{}", glyph.left, glyph.top, glyph.width, glyph.height);
+            entry.set_glyph_offset(glyph.left, glyph.top);
+
             let fb = glium::framebuffer::SimpleFrameBuffer::new(display,
                                                                 self.texture_atlas.layer(entry.page).unwrap().main_level()).unwrap();
             let rect = glium::Rect {left: 0, bottom: 0,
@@ -129,6 +134,13 @@ impl GlyphAtlas {
                                            width: glyph.width, height: glyph.height};
             src_texture.as_surface().blit_color(&rect, &fb, &rect2, glium::uniforms::MagnifySamplerFilter::Nearest);
     
+
+            let index  = entry.attribute_index();
+            self.attribute_textures.write(
+                glium::Rect {left: index, bottom: 0,
+                             width: 1, height: 1},
+                vec![vec![entry.tex_left()]]
+                );
             self.map.insert(c, entry.clone());
             entry            
         }
@@ -148,15 +160,67 @@ pub struct AtlasEntry {
     top:u32,
     bottom:u32,
 
+    tex_data_array:[f32;NUM_ATTRIBUTES],
+
+    
     rg_top: i32,
     rg_left: i32,
 
     font_height: f64,
     font_width: f64,
-    font_descent: f32
+    font_descent: f32,
+    
+    index: u32 
 }
 
 impl AtlasEntry {
+
+    pub fn new(index:u32) -> AtlasEntry {
+        AtlasEntry {
+            page:1000,
+            left:0,
+            right:0,
+            top:0,
+            bottom:0,
+
+            tex_data_array:[0.,0.],
+
+    
+            rg_top: 0,
+            rg_left: 0,
+            
+            font_height: 0.,
+            font_width: 0.,
+            font_descent: 0.,
+            
+            index: index 
+        }
+    }
+
+    pub fn set_texture_positions(&mut self, page:u32, left:u32, right:u32, top:u32, bottom:u32) {
+        self.page = page;
+        self.left = left;
+        self.right = right;
+        self.top = top;
+        self.bottom = bottom;
+    }
+
+    pub fn set_font_data(&mut self, font_width:f64, font_height:f64, font_descent:f32) {
+        self.font_width = font_width;
+        self.font_height = font_height;
+        self.font_descent = font_descent;
+    }
+
+    pub fn set_glyph_offset(&mut self, left_offset: i32, top_offset: i32) {
+        assert!(self.font_width != 0., "font data not set");
+        self.rg_left = left_offset;
+        self.rg_top = top_offset;
+    }
+    
+    pub fn attribute_index(&self) -> u32 {
+        self.index
+    }
+    
     pub fn tex_left(&self) -> f32 {
         self.left as f32/TEXTURE_SIZE as f32
     }

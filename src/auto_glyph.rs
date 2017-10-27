@@ -79,8 +79,6 @@ impl AutoGlyph {
 
     pub fn add_background_to_vertex_list(&self, list:&mut  VertexList) {
         let seed = 7.;
-        let row = self.raw_r;
-        let col = self.raw_c;
         let w =   self.width.ceil(); //makes the bg right for extra with characters
         let h = 1.;
 

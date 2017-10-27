@@ -7,7 +7,7 @@ extern crate rand;
 
 use font::{Rasterize, FontDesc};
 use std::{time};
-use rand::Rng;
+//use rand::Rng;
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -51,7 +51,7 @@ fn main() {
 
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
-    let mut rng = rand::thread_rng();
+    //let mut rng = rand::thread_rng();
     // for r in 0..num_rows {
     //     for c in 0..num_cols {
     //         let atlas_entry;
