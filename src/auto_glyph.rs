@@ -38,7 +38,7 @@ pub type VertexList = Vec<AutoGlyphV>;
 impl AutoGlyph {
     pub fn new(entry:&AtlasEntry, r:f32, c:f32, start_t:f32, end_t:f32) -> AutoGlyph {        
 
-        AutoGlyph { r_adjust: entry.descent() + 1. - entry.top(),
+        AutoGlyph { r_adjust: 1. - entry.top(),
                     c_adjust: entry.left(),
                     raw_r: r,
                     raw_c: c,

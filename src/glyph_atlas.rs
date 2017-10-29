@@ -6,7 +6,7 @@ use std::cmp::max;
 
 const TEXTURE_SIZE:u32 = 1024;
 const NUM_PAGES:u32 = 10;
-const NUM_ATTRIBUTES:usize = 2;
+const NUM_ATTRIBUTES:usize = 8; //this should be a power of two for max opengl compatability
 
 pub struct GlyphAtlas {
     rasterizer: Rasterizer,
@@ -160,11 +160,7 @@ pub struct AtlasEntry {
     top:u32,
     bottom:u32,
 
-    tex_data_array:[f32;NUM_ATTRIBUTES],
-
-    
-    rg_top: i32,
-    rg_left: i32,
+    attributes:[f32;NUM_ATTRIBUTES],
 
     font_height: f64,
     font_width: f64,
@@ -172,6 +168,18 @@ pub struct AtlasEntry {
     
     index: u32 
 }
+
+enum AttributeSlots {
+    Left = 0,
+    Right,
+    Top,
+    Bottom,
+    Width,
+    Height,
+    LeftOffset,
+    TopOffset,
+}
+
 
 impl AtlasEntry {
 
@@ -183,12 +191,8 @@ impl AtlasEntry {
             top:0,
             bottom:0,
 
-            tex_data_array:[0.,0.],
+            attributes:[0.; NUM_ATTRIBUTES],
 
-    
-            rg_top: 0,
-            rg_left: 0,
-            
             font_height: 0.,
             font_width: 0.,
             font_descent: 0.,
@@ -197,24 +201,44 @@ impl AtlasEntry {
         }
     }
 
+
     pub fn set_texture_positions(&mut self, page:u32, left:u32, right:u32, top:u32, bottom:u32) {
+        use self::AttributeSlots::*;
+
+
         self.page = page;
-        self.left = left;
-        self.right = right;
-        self.top = top;
-        self.bottom = bottom;
+
+        self.attributes[Left as usize] = left as f32/TEXTURE_SIZE as f32;
+        self.attributes[Right as usize] = right as f32/TEXTURE_SIZE as f32;
+        self.attributes[Top as usize] = top as f32/TEXTURE_SIZE as f32;
+        self.attributes[Bottom as usize] = bottom as f32/TEXTURE_SIZE as f32;
     }
 
     pub fn set_font_data(&mut self, font_width:f64, font_height:f64, font_descent:f32) {
+        use self::AttributeSlots::*;
+        
         self.font_width = font_width;
         self.font_height = font_height;
         self.font_descent = font_descent;
+
+
+        let pixel_size = (self.tex_right() - self.tex_left()) * TEXTURE_SIZE as f32;
+        let width = pixel_size/self.font_width as f32;
+
+        
+        self.attributes[Width as usize] = width;
+
+        let pixel_size = (self.tex_top() - self.tex_bottom()) * TEXTURE_SIZE as f32;
+        let height = pixel_size/self.font_height as f32;
+        self.attributes[Height as usize] = height;
+        
     }
 
     pub fn set_glyph_offset(&mut self, left_offset: i32, top_offset: i32) {
+        use self::AttributeSlots::*;
         assert!(self.font_width != 0., "font data not set");
-        self.rg_left = left_offset;
-        self.rg_top = top_offset;
+        self.attributes[LeftOffset as usize] = left_offset as f32/self.font_width as f32;
+        self.attributes[TopOffset as usize] = (top_offset as f32 - self.font_descent as f32)/self.font_height as f32;
     }
     
     pub fn attribute_index(&self) -> u32 {
@@ -222,40 +246,35 @@ impl AtlasEntry {
     }
     
     pub fn tex_left(&self) -> f32 {
-        self.left as f32/TEXTURE_SIZE as f32
+        self.attributes[self::AttributeSlots::Left as usize]
     }
 
     pub fn tex_right(&self) -> f32 {
-        self.right as f32/TEXTURE_SIZE as f32 
+        self.attributes[self::AttributeSlots::Right as usize]
     }
 
     pub fn tex_top(&self) -> f32 {
-        self.top as f32/TEXTURE_SIZE as f32
+        self.attributes[self::AttributeSlots::Top as usize]
     }
 
     pub fn tex_bottom(&self) -> f32 {
-        self.bottom as f32/TEXTURE_SIZE as f32
+        self.attributes[self::AttributeSlots::Bottom as usize]
     }
 
     pub fn width(&self) -> f32 {
-        (self.right - self.left) as f32/self.font_width as f32
+        self.attributes[self::AttributeSlots::Width as usize]
     }
 
     pub fn height(&self) -> f32 {
-        (self.top - self.bottom) as f32/self.font_height as f32
+        self.attributes[self::AttributeSlots::Height as usize]
     }
 
     pub fn left(&self) -> f32 {
-        self.rg_left as f32/self.font_width as f32
+        self.attributes[self::AttributeSlots::LeftOffset as usize]
     }
 
     pub fn top(&self) -> f32 {
-        self.rg_top as f32/self.font_height as f32
-    }
-
-    pub fn descent(&self) -> f32 {
-        //println!("des{}",self.font_descent);
-        self.font_descent as f32/self.font_height as f32
+        self.attributes[self::AttributeSlots::TopOffset as usize]
     }
 
 }
