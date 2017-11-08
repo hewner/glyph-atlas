@@ -38,9 +38,9 @@ impl GlyphAtlas {
         ).unwrap();
 
 
-        let attributes = Texture2d::empty(display,
-                             TEXTURE_SIZE,
-                             NUM_ATTRIBUTES as u32).unwrap();
+        let attributes = Texture2d::empty(display,                             
+                                          NUM_ATTRIBUTES as u32,
+                                          TEXTURE_SIZE).unwrap();
         rasterizer.get_glyph(&GlyphKey { font_key: font, c: 'X', size: size }).unwrap();
         GlyphAtlas { rasterizer: rasterizer,
                      font: font,
@@ -136,10 +136,21 @@ impl GlyphAtlas {
     
 
             let index  = entry.attribute_index();
+            let mut temp_data = entry.attribute_array().to_vec();
+            /* temp_data[0] = 0.;
+            temp_data[1] = 10.;
+            temp_data[2] = 10.;
+            temp_data[3] = 0.;
+            temp_data[4] = 10.;
+            temp_data[5] = 10.;
+            temp_data[6] = 10.;
+            temp_data[7] = 10.; */
+            println!("Data array: {:?}", &temp_data);
+            println!("TL: {} TB: {}", entry.tex_left(), entry.tex_bottom());
             self.attribute_textures.write(
-                glium::Rect {left: index, bottom: 0,
-                             width: 1, height: 1},
-                vec![vec![entry.tex_left()]]
+                glium::Rect {left: 0, bottom: index,
+                             width: NUM_ATTRIBUTES  as u32, height: 1},
+                vec![temp_data]
                 );
             self.map.insert(c, entry.clone());
             entry            
@@ -150,6 +161,11 @@ impl GlyphAtlas {
     pub fn texture(&self) -> &Texture2dArray {
         &self.texture_atlas
     }
+
+    pub fn attribute_texture(&self) -> &Texture2d {
+        &self.attribute_textures
+    }
+
 }
 
 #[derive(Clone)]
@@ -166,7 +182,7 @@ pub struct AtlasEntry {
     font_width: f64,
     font_descent: f32,
     
-    index: u32 
+    pub index: u32 
 }
 
 enum AttributeSlots {
@@ -275,6 +291,10 @@ impl AtlasEntry {
 
     pub fn top(&self) -> f32 {
         self.attributes[self::AttributeSlots::TopOffset as usize]
+    }
+
+    pub fn attribute_array(&self) -> &[f32;NUM_ATTRIBUTES] {
+        &self.attributes
     }
 
 }

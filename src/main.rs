@@ -101,12 +101,28 @@ fn main() {
         in float end_t;
         uniform float t;
         in int bg;
+        in int index;
+        in int corner;
         out float fseed;
         out vec2 ftex_o;
         flat out int fbg;
         uniform mat4 matrix;
+        uniform sampler2D attributes;
 
         const int DONT_DRAW = -1;
+        
+        // corner
+        const int UPPER_LEFT = 0;
+        const int UPPER_RIGHT = 1;
+        const int LOWER_LEFT = 2;
+        const int LOWER_RIGHT = 3;
+
+        // pos in attribute array
+        const int TEX_LEFT = 0;
+        const int TEX_RIGHT = 1;
+        const int TEX_TOP = 2;
+        const int TEX_BOTTOM = 3;
+  
 
         void main() {
             fseed = seed;
@@ -114,8 +130,17 @@ fn main() {
             fbg = bg;
             if(start_t >= t || end_t < t) {
                fbg = DONT_DRAW;
+               ftex_o = vec2(0.,0.);
                gl_Position = vec4(0.,0.,0.,0.);
             } else {
+
+               if(corner == UPPER_LEFT) {
+                   vec4 left = texture(attributes, vec2((TEX_LEFT + .5)/8., (index + .5)/1024.));
+                   vec4 bottom = texture(attributes, vec2((TEX_BOTTOM + .5)/8., (index + .5)/1024.));
+                   ftex_o = vec2(left[0],bottom[0]);
+                   //gl_Position = matrix * vec4(left[0], bottom[0], 0.0, 1.0);
+
+               } 
 
                float p = (t - start_t)/(end_t - start_t); // percent of total time
                float p_2 = p*p;
@@ -125,7 +150,7 @@ fn main() {
                float c = pos[1]*(1 - progress) + end_pos[1]*progress; 
 
                gl_Position = matrix * vec4(r, c, 0.0, 1.0);
-            }
+                          }
      
         }
     "#;
@@ -192,7 +217,8 @@ fn main() {
         let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
         let uniforms = uniform! { t: t,
                                   matrix : matrix,
-                                  tex : atlas.texture()
+                                  tex : atlas.texture(),
+                                  attributes : atlas.attribute_texture()
         };
         target.clear_color(0.0, 0.0, 1.0, 1.0);
         let params = glium::DrawParameters {
