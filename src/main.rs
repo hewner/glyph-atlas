@@ -51,7 +51,7 @@ fn main() {
 
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
-    //let mut rng = rand::thread_rng();
+    let mut rng = rand::thread_rng();
     // for r in 0..num_rows {
     //     for c in 0..num_cols {
     //         let atlas_entry;
@@ -61,10 +61,7 @@ fn main() {
             
     //         let r = r as f32;
     //         let c = c as f32; 
-    //         let mut ag = AutoGlyph::new(&atlas_entry, r, c);
-    //         let r_vel = rng.gen::<f32>()*2. - 1.;
-    //         let c_vel = rng.gen::<f32>()*2. - 1.;
-    //         ag.set_vel(&r_vel,&c_vel);
+    //         let mut ag = AutoGlyph::new(&atlas_entry, r, c, 0., 20.);
     //         ag.add_background_to_vertex_list(&mut boxes);
     //         ag.add_to_vertex_list(&mut boxes);
             
@@ -78,9 +75,15 @@ fn main() {
 
     let atlas_entry = atlas.get_entry(&display, 'の');
     let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
-    ag.set_end(5.,20.);
-    //let r_vel = rng.gen::<f32>()*2. - 1.;
-    //let c_vel = rng.gen::<f32>()*2. - 1.;
+
+
+    ag.add_background_to_vertex_list(&mut boxes);
+    ag.add_to_vertex_list(&mut boxes);
+
+
+    let atlas_entry = atlas.get_entry(&display, 'i');
+    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 5.);
+
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
@@ -123,6 +126,10 @@ fn main() {
         const int TEX_TOP = 2;
         const int TEX_BOTTOM = 3;
   
+        float getAttribute(int slot, int index) {
+            return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
+            //return texelFetch(attributes, ivec2(slot, index), 0)[0];
+        }
 
         void main() {
             fseed = seed;
@@ -133,14 +140,20 @@ fn main() {
                ftex_o = vec2(0.,0.);
                gl_Position = vec4(0.,0.,0.,0.);
             } else {
-
+/*
                if(corner == UPPER_LEFT) {
-                   vec4 left = texture(attributes, vec2((TEX_LEFT + .5)/8., (index + .5)/1024.));
-                   vec4 bottom = texture(attributes, vec2((TEX_BOTTOM + .5)/8., (index + .5)/1024.));
-                   ftex_o = vec2(left[0],bottom[0]);
-                   //gl_Position = matrix * vec4(left[0], bottom[0], 0.0, 1.0);
-
+                   ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
+               }
+               if(corner == LOWER_LEFT) {
+                   ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_TOP, index));
                } 
+               if(corner == UPPER_RIGHT) {
+                   ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_BOTTOM, index));
+               } 
+               if(corner == LOWER_RIGHT) {
+                   ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_TOP, index));
+               }
+*/
 
                float p = (t - start_t)/(end_t - start_t); // percent of total time
                float p_2 = p*p;

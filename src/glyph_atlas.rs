@@ -137,6 +137,7 @@ impl GlyphAtlas {
 
             let index  = entry.attribute_index();
             let mut temp_data = entry.attribute_array().to_vec();
+            //temp_data[1] = 0.05;
             /* temp_data[0] = 0.;
             temp_data[1] = 10.;
             temp_data[2] = 10.;
@@ -146,7 +147,7 @@ impl GlyphAtlas {
             temp_data[6] = 10.;
             temp_data[7] = 10.; */
             println!("Data array: {:?}", &temp_data);
-            println!("TL: {} TB: {}", entry.tex_left(), entry.tex_bottom());
+            println!("index {}", entry.index);
             self.attribute_textures.write(
                 glium::Rect {left: 0, bottom: index,
                              width: NUM_ATTRIBUTES  as u32, height: 1},
