@@ -73,17 +73,31 @@ fn main() {
     // plot (x^3-2x^2+x)*.5 + (-2x^3+3x^2) + (x^3 - x^2)*-.6 from x=0 to 1
     // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
 
-    let atlas_entry = atlas.get_entry(&display, 'の');
-    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
 
+
+    let atlas_entry = atlas.get_entry(&display, 'の');
+    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 5.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
 
 
     let atlas_entry = atlas.get_entry(&display, 'i');
-    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 5.);
+    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
 
+    ag.add_background_to_vertex_list(&mut boxes);
+    ag.add_to_vertex_list(&mut boxes);
+
+
+    let atlas_entry = atlas.get_entry(&display, 'Q');
+    let mut ag = AutoGlyph::new(&atlas_entry, 6., 5., 0., 5.);
+
+    ag.add_background_to_vertex_list(&mut boxes);
+    ag.add_to_vertex_list(&mut boxes);
+
+
+    let atlas_entry = atlas.get_entry(&display, 'B');
+    let mut ag = AutoGlyph::new(&atlas_entry, 7., 5., 0., 5.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
@@ -133,27 +147,31 @@ fn main() {
 
         void main() {
             fseed = seed;
-            ftex_o = tex_o;
+            //ftex_o = tex_o;
             fbg = bg;
             if(start_t >= t || end_t < t) {
                fbg = DONT_DRAW;
                ftex_o = vec2(0.,0.);
                gl_Position = vec4(0.,0.,0.,0.);
             } else {
-/*
+
                if(corner == UPPER_LEFT) {
                    ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
+                  //ftex_o = vec2(0,0);
                }
                if(corner == LOWER_LEFT) {
                    ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_TOP, index));
+                  //ftex_o = vec2(0,0.044921875);
                } 
                if(corner == UPPER_RIGHT) {
                    ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_BOTTOM, index));
+                  //ftex_o = vec2(0.048828125,0 );
                } 
                if(corner == LOWER_RIGHT) {
                    ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_TOP, index));
+                  //ftex_o = vec2(0.048828125,0.044921875);
                }
-*/
+
 
                float p = (t - start_t)/(end_t - start_t); // percent of total time
                float p_2 = p*p;

@@ -132,6 +132,7 @@ impl GlyphAtlas {
                                     width: glyph.width as u32, height: glyph.height as u32};
             let rect2 = glium::BlitTarget {left: entry.left as u32, bottom: entry.bottom as u32,
                                            width: glyph.width, height: glyph.height};
+            println!("rec2: {:?}", &rect2);
             src_texture.as_surface().blit_color(&rect, &fb, &rect2, glium::uniforms::MagnifySamplerFilter::Nearest);
     
 
@@ -225,6 +226,9 @@ impl AtlasEntry {
 
         self.page = page;
 
+        self.left = left; //used for filling texture only
+        self.bottom = bottom; //used for filling texture only
+        
         self.attributes[Left as usize] = left as f32/TEXTURE_SIZE as f32;
         self.attributes[Right as usize] = right as f32/TEXTURE_SIZE as f32;
         self.attributes[Top as usize] = top as f32/TEXTURE_SIZE as f32;
