@@ -1,5 +1,5 @@
 use glium::{self, Surface};
-use glium::texture::{Texture2dArray, Texture2d};
+use glium::texture::{Texture2dArray, Texture2d, UncompressedFloatFormat, MipmapsOption};
 use font::{self, Rasterize, Rasterizer, FontDesc, FontKey, GlyphKey};
 use std::collections::HashMap;
 use std::cmp::max;
@@ -38,9 +38,11 @@ impl GlyphAtlas {
         ).unwrap();
 
 
-        let attributes = Texture2d::empty(display,                             
-                                          NUM_ATTRIBUTES as u32,
-                                          TEXTURE_SIZE).unwrap();
+        let attributes = Texture2d::empty_with_format(display,
+                                                      UncompressedFloatFormat::F32,
+                                                      MipmapsOption::NoMipmap,
+                                                      NUM_ATTRIBUTES as u32,
+                                                      TEXTURE_SIZE).unwrap();
         rasterizer.get_glyph(&GlyphKey { font_key: font, c: 'X', size: size }).unwrap();
         GlyphAtlas { rasterizer: rasterizer,
                      font: font,
