@@ -134,21 +134,11 @@ impl GlyphAtlas {
                                     width: glyph.width as u32, height: glyph.height as u32};
             let rect2 = glium::BlitTarget {left: entry.left as u32, bottom: entry.bottom as u32,
                                            width: glyph.width, height: glyph.height};
-            println!("rec2: {:?}", &rect2);
             src_texture.as_surface().blit_color(&rect, &fb, &rect2, glium::uniforms::MagnifySamplerFilter::Nearest);
     
 
             let index  = entry.attribute_index();
             let mut temp_data = entry.attribute_array().to_vec();
-            //temp_data[1] = 0.05;
-            /* temp_data[0] = 0.;
-            temp_data[1] = 10.;
-            temp_data[2] = 10.;
-            temp_data[3] = 0.;
-            temp_data[4] = 10.;
-            temp_data[5] = 10.;
-            temp_data[6] = 10.;
-            temp_data[7] = 10.; */
             println!("Data array: {:?}", &temp_data);
             println!("index {}", entry.index);
             self.attribute_textures.write(

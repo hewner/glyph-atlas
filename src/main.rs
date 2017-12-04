@@ -110,7 +110,6 @@ fn main() {
         #version 140
         in vec2 pos;
         in vec2 end_pos;
-        in vec2 tex_o;
         in float seed;
         in float r_vel;
         in float c_vel;
