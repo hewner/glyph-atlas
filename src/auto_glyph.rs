@@ -69,12 +69,12 @@ impl AutoGlyph {
         let seed = 7.;
         let w = self.width;
         let h = self.height;
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust, self.c_adjust, 0, UpperLeft));
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust + h, self.c_adjust, 0, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust, self.c_adjust + w, 0, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust + h, self.c_adjust, 0, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust, self.c_adjust + w, 0, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, self.r_adjust + h, self.c_adjust +w, 0, LowerRight));
+        list.push(AutoGlyphV::from_ag(self, 0, UpperLeft));
+        list.push(AutoGlyphV::from_ag(self, 0, LowerLeft));
+        list.push(AutoGlyphV::from_ag(self, 0, UpperRight));
+        list.push(AutoGlyphV::from_ag(self, 0, LowerLeft));
+        list.push(AutoGlyphV::from_ag(self, 0, UpperRight));
+        list.push(AutoGlyphV::from_ag(self, 0, LowerRight));
 
     }
 
@@ -84,24 +84,24 @@ impl AutoGlyph {
         let w =   self.width.ceil(); //makes the bg right for extra with characters
         let h = 1.;
 
-        list.push(AutoGlyphV::from_ag(self, 0.,0., 1, UpperLeft));
-        list.push(AutoGlyphV::from_ag(self, h,0., 1, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 0.,w, 1, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, h,0., 1, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 0.,w, 1, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, h, w, 1, LowerRight));        
+        list.push(AutoGlyphV::from_ag(self, 1, UpperLeft));
+        list.push(AutoGlyphV::from_ag(self, 1, LowerLeft));
+        list.push(AutoGlyphV::from_ag(self, 1, UpperRight));
+        list.push(AutoGlyphV::from_ag(self, 1, LowerLeft));
+        list.push(AutoGlyphV::from_ag(self, 1, UpperRight));
+        list.push(AutoGlyphV::from_ag(self, 1, LowerRight));        
 
     }
 
 }
 
 impl AutoGlyphV {
-    fn from_ag(ag:&AutoGlyph, r_adjust:f32, c_adjust:f32, bg:u32, corner:Corner) -> AutoGlyphV {
+    fn from_ag(ag:&AutoGlyph, bg:u32, corner:Corner) -> AutoGlyphV {
         AutoGlyphV {
                      index : ag.index,
-                     pos : [c_adjust+ag.raw_c, r_adjust+ag.raw_r],
+                     pos : [ag.raw_r, ag.raw_c],
                      corner : corner as u32,
-                     end_pos : [c_adjust+ag.end_c, r_adjust+ag.end_r],
+                     end_pos : [ag.end_r, ag.end_c],
                      bg : bg,
                      seed : 7.,
                      start_t: ag.start_t,

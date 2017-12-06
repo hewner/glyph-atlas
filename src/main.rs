@@ -76,28 +76,28 @@ fn main() {
 
 
     let atlas_entry = atlas.get_entry(&display, 'の');
-    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 5.);
+    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 100.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
 
 
-    let atlas_entry = atlas.get_entry(&display, 'i');
-    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 5.);
+    let atlas_entry = atlas.get_entry(&display, 'q');
+    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 100.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
 
 
     let atlas_entry = atlas.get_entry(&display, 'Q');
-    let mut ag = AutoGlyph::new(&atlas_entry, 6., 5., 0., 5.);
+    let mut ag = AutoGlyph::new(&atlas_entry, 5., 6., 0., 100.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
 
 
-    let atlas_entry = atlas.get_entry(&display, 'B');
-    let mut ag = AutoGlyph::new(&atlas_entry, 7., 5., 0., 5.);
+    let atlas_entry = atlas.get_entry(&display, ')');
+    let mut ag = AutoGlyph::new(&atlas_entry, 5., 7., 0., 100.);
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
@@ -138,6 +138,10 @@ fn main() {
         const int TEX_RIGHT = 1;
         const int TEX_TOP = 2;
         const int TEX_BOTTOM = 3;
+        const int GLYPH_WIDTH = 4;
+        const int GLYPH_HEIGHT = 5;
+        const int GLYPH_LEFT_OFFSET = 6;
+        const int GLPYH_TOP_OFFSET = 7;
   
         float getAttribute(int slot, int index) {
             return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
@@ -153,22 +157,37 @@ fn main() {
                ftex_o = vec2(0.,0.);
                gl_Position = vec4(0.,0.,0.,0.);
             } else {
+               float width = getAttribute(GLYPH_WIDTH, index);
+               float height = getAttribute(GLYPH_HEIGHT, index);
+               float start_r = pos[0];
+               float start_c = pos[1]; 
 
+               if(fbg != 0) {
+                   width = ceil(width);
+                   height = 1;
+               } else {
+                   float left_offset = getAttribute(GLYPH_LEFT_OFFSET, index);
+                   float top_offset = 1 - getAttribute(GLPYH_TOP_OFFSET, index);
+
+                   start_r += top_offset;
+                   start_c += left_offset;
+               }
                if(corner == UPPER_LEFT) {
                    ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
-                  //ftex_o = vec2(0,0);
                }
                if(corner == LOWER_LEFT) {
                    ftex_o = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_TOP, index));
-                  //ftex_o = vec2(0,0.044921875);
+
+                   start_r = start_r + height;
                } 
                if(corner == UPPER_RIGHT) {
+                   start_c = start_c + width;
                    ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_BOTTOM, index));
-                  //ftex_o = vec2(0.048828125,0 );
                } 
                if(corner == LOWER_RIGHT) {
+                   start_r = start_r + height;
+                   start_c = start_c + width;
                    ftex_o = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_TOP, index));
-                  //ftex_o = vec2(0.048828125,0.044921875);
                }
 
 
@@ -176,11 +195,13 @@ fn main() {
                float p_2 = p*p;
                float p_3 = p_2*p;
                float progress = (p_3-2*p_2+p)*.4 + (-2*p_3+3*p_2) + (p_3 - p_2)*-.2;
+               // this needs to be fixed to use start_r & start_c
                float r = pos[0]*(1 - progress) + end_pos[0]*progress; 
                float c = pos[1]*(1 - progress) + end_pos[1]*progress; 
-
-               gl_Position = matrix * vec4(r, c, 0.0, 1.0);
-                          }
+               r = start_r;
+               c = start_c;
+               gl_Position = matrix * vec4(c, r, 0.0, 1.0);
+            }
      
         }
     "#;
