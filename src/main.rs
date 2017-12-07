@@ -119,7 +119,7 @@ fn main() {
     let program = glium::Program::from_source(&display,
                                               &file_as_string("shaders/vertex.glsl"),
                                               &file_as_string("shaders/fragment.glsl"),
-                                              None).unwrap();
+                                              Some(&file_as_string("shaders/geometry.glsl"))).unwrap();
 
 
     let mut closed = false;
