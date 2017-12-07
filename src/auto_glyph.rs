@@ -16,19 +16,11 @@ pub struct AutoGlyph {
     end_t:f32
 }
 
-enum Corner {
-    UpperLeft = 0,
-    UpperRight,
-    LowerLeft,
-    LowerRight
-}
-
 
 #[derive(Copy, Clone)]
 pub struct AutoGlyphV {
     index : u32,
     bg : u32,
-    corner : u32,
     pos: [f32; 2],
     seed: f32,
     end_pos: [f32; 2],
@@ -36,7 +28,7 @@ pub struct AutoGlyphV {
     end_t: f32
 }
 
-implement_vertex!(AutoGlyphV, pos, end_pos, seed, bg, start_t, end_t, corner, index);
+implement_vertex!(AutoGlyphV, pos, end_pos, seed, bg, start_t, end_t, index);
 
 pub type VertexList = Vec<AutoGlyphV>;
 
@@ -65,42 +57,28 @@ impl AutoGlyph {
     }
 
     pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
-        use self::Corner::*;
         let seed = 7.;
         let w = self.width;
         let h = self.height;
-        list.push(AutoGlyphV::from_ag(self, 0, UpperLeft));
-        list.push(AutoGlyphV::from_ag(self, 0, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 0, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, 0, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 0, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, 0, LowerRight));
+        list.push(AutoGlyphV::from_ag(self, 0));
 
     }
 
     pub fn add_background_to_vertex_list(&self, list:&mut  VertexList) {
-        use self::Corner::*;
         let seed = 7.;
         let w =   self.width.ceil(); //makes the bg right for extra with characters
         let h = 1.;
 
-        list.push(AutoGlyphV::from_ag(self, 1, UpperLeft));
-        list.push(AutoGlyphV::from_ag(self, 1, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 1, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, 1, LowerLeft));
-        list.push(AutoGlyphV::from_ag(self, 1, UpperRight));
-        list.push(AutoGlyphV::from_ag(self, 1, LowerRight));        
-
+        list.push(AutoGlyphV::from_ag(self, 1));
     }
 
 }
 
 impl AutoGlyphV {
-    fn from_ag(ag:&AutoGlyph, bg:u32, corner:Corner) -> AutoGlyphV {
+    fn from_ag(ag:&AutoGlyph, bg:u32) -> AutoGlyphV {
         AutoGlyphV {
                      index : ag.index,
                      pos : [ag.raw_r, ag.raw_c],
-                     corner : corner as u32,
                      end_pos : [ag.end_r, ag.end_c],
                      bg : bg,
                      seed : 7.,

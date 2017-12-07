@@ -113,7 +113,7 @@ fn main() {
 
     
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::Points);
 
 
     let program = glium::Program::from_source(&display,
