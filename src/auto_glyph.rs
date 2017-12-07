@@ -1,5 +1,6 @@
 
 use glyph_atlas::AtlasEntry;
+use rand;
 
 pub struct AutoGlyph {
     index:u32,
@@ -57,7 +58,6 @@ impl AutoGlyph {
     }
 
     pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
-        let seed = 7.;
         let w = self.width;
         let h = self.height;
         list.push(AutoGlyphV::from_ag(self, 0));
@@ -65,7 +65,6 @@ impl AutoGlyph {
     }
 
     pub fn add_background_to_vertex_list(&self, list:&mut  VertexList) {
-        let seed = 7.;
         let w =   self.width.ceil(); //makes the bg right for extra with characters
         let h = 1.;
 
@@ -76,12 +75,14 @@ impl AutoGlyph {
 
 impl AutoGlyphV {
     fn from_ag(ag:&AutoGlyph, bg:u32) -> AutoGlyphV {
+        
+
         AutoGlyphV {
                      index : ag.index,
                      pos : [ag.raw_r, ag.raw_c],
                      end_pos : [ag.end_r, ag.end_c],
                      bg : bg,
-                     seed : 7.,
+                     seed : rand::random::<f32>(),
                      start_t: ag.start_t,
                      end_t: ag.end_t
         }

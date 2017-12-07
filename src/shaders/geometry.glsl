@@ -11,6 +11,7 @@ out vec2 ftex_o2;
 flat out int fbg2;
 
 uniform float t;
+uniform int max_index;
 uniform mat4 matrix;
 uniform sampler2D attributes;
 
@@ -37,10 +38,15 @@ float getAttribute(int slot, int index) {
   //return texelFetch(attributes, ivec2(slot, index), 0)[0];
 }
 
+float rand(float fseed, float seed){
+  return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
+}
+
 
 void main()
 {
   int index = findex[0];
+  index = int(rand(fseed[0],t)*(max_index+1));
   float width = getAttribute(GLYPH_WIDTH, index);
   float height = getAttribute(GLYPH_HEIGHT, index);
   float start_r = gl_in[0].gl_Position[0];

@@ -23,7 +23,7 @@ void main() {
   float b = rand(fseed2, g);
   //color = vec4(r, g, b, 1.0);
   //color = texture(tex, vec3(totalxOffset, ftex_o[1], 1.));
-  vec4 fg = vec4(1.,1.,1.,1.);
+  vec4 fg = vec4(0.,0.8,0.,1.);
   vec4 bg = vec4(0.,0.0,0.,1.);
   if(fbg2 == 0) {
     vec4 alpha = texture(tex, vec3(ftex_o2[0], ftex_o2[1], 0.));

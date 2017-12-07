@@ -160,6 +160,10 @@ impl GlyphAtlas {
         &self.attribute_textures
     }
 
+    pub fn size(&self) -> u32 {
+        self.next_index
+    }
+
 }
 
 #[derive(Clone)]

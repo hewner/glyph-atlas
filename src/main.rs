@@ -38,7 +38,7 @@ fn main() {
 
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
-    let size = font::Size::new(40.);
+    let size = font::Size::new(5.);
 
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
     ///***************END FONTS
@@ -61,21 +61,21 @@ fn main() {
     let num_cells = num_rows*num_cols;
     let mut boxes = VertexList::with_capacity(6*num_cells as usize);
     let mut rng = rand::thread_rng();
-    // for r in 0..num_rows {
-    //     for c in 0..num_cols {
-    //         let atlas_entry;
-    //         let letter = 'A' as u8 + ((c + r) % 58) as u8;
-    //         atlas_entry = atlas.get_entry(&display, letter as char);
+    for r in 0..num_rows {
+        for c in 0..num_cols {
+            let atlas_entry;
+            let letter = 'A' as u8 + ((c + r) % 58) as u8;
+            atlas_entry = atlas.get_entry(&display, letter as char);
 
-            
-    //         let r = r as f32;
-    //         let c = c as f32; 
-    //         let mut ag = AutoGlyph::new(&atlas_entry, r, c, 0., 20.);
-    //         ag.add_background_to_vertex_list(&mut boxes);
-    //         ag.add_to_vertex_list(&mut boxes);
-            
-    //     }
-    // }
+         
+            let r = r as f32;
+            let c = c as f32; 
+            let mut ag = AutoGlyph::new(&atlas_entry, r, c, 0., 20.);
+            ag.add_background_to_vertex_list(&mut boxes);
+            ag.add_to_vertex_list(&mut boxes);
+         
+        }
+    }
 
 
     
@@ -83,7 +83,7 @@ fn main() {
     // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
 
 
-
+/*
     let atlas_entry = atlas.get_entry(&display, 'の');
     let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 100.);
 
@@ -110,7 +110,7 @@ fn main() {
 
     ag.add_background_to_vertex_list(&mut boxes);
     ag.add_to_vertex_list(&mut boxes);
-
+*/
     
     let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::Points);
@@ -144,7 +144,8 @@ fn main() {
         let uniforms = uniform! { t: t,
                                   matrix : matrix,
                                   tex : atlas.texture(),
-                                  attributes : atlas.attribute_texture()
+                                  attributes : atlas.attribute_texture(),
+                                  max_index : (atlas.size() - 1) as i32
         };
         target.clear_color(0.0, 0.0, 1.0, 1.0);
         let params = glium::DrawParameters {

@@ -6,7 +6,6 @@ in float start_t;
 in float end_t;
 in int bg;
 in int index;
-in int corner;
 out float fseed;
 out vec2 ftex_o;
 flat out int fbg;
