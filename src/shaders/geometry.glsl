@@ -2,12 +2,18 @@
 layout(points) in;
 layout(triangle_strip, max_vertices=4) out;
 
-in float fseed[];
-flat in int fbg[];
-flat in int findex[];
+in VertexData {
+    mat4 fg;
+    float seed;
+    flat int bg;
+    flat int index;
+
+} data[];
+
 
 out float fseed2;
 out vec2 ftex_o2;
+out vec4 fg;
 flat out int fbg2;
 
 uniform float t;
@@ -34,49 +40,58 @@ const int GLYPH_LEFT_OFFSET = 6;
 const int GLPYH_TOP_OFFSET = 7;
 
 float getAttribute(int slot, int index) {
-  return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
-  //return texelFetch(attributes, ivec2(slot, index), 0)[0];
+    return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
+    //return texelFetch(attributes, ivec2(slot, index), 0)[0];
 }
 
 float rand(float fseed, float seed){
-  return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
 }
 
 
 void main()
 {
-  int index = findex[0];
-  index = int(rand(fseed[0],t)*(max_index+1));
-  float width = getAttribute(GLYPH_WIDTH, index);
-  float height = getAttribute(GLYPH_HEIGHT, index);
-  float start_r = gl_in[0].gl_Position[0];
-  float start_c = gl_in[0].gl_Position[1];
 
-  if(fbg[0] != 0) {
-    width = ceil(width);
-    height = 1;
-  } else {
-    float left_offset = getAttribute(GLYPH_LEFT_OFFSET, index);
-    float top_offset = 1 - getAttribute(GLPYH_TOP_OFFSET, index);
 
-    start_r += top_offset;
-    start_c += left_offset;
-  }
-  
-  fseed2 = fseed[0];
-  fbg2 = fbg[0];
-  ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
-  gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.0);
-  EmitVertex();
-  ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_TOP, index));
-  gl_Position = matrix * vec4(start_c, start_r + height, 0.0, 1.0);
-  EmitVertex();
-  ftex_o2 = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_BOTTOM, index));
-  gl_Position = matrix * vec4(start_c + width, start_r, 0.0, 1.0);
-  EmitVertex();
-  ftex_o2 = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_TOP, index));
-  gl_Position = matrix * vec4(start_c + width, start_r + height, 0.0, 1.0);
-  EmitVertex();
+    int index = data[0].index;
+    //index = int(rand(fseed[0],t)*(max_index+1));
+    float width = getAttribute(GLYPH_WIDTH, index);
+    float height = getAttribute(GLYPH_HEIGHT, index);
+    float start_r = gl_in[0].gl_Position[0];
+    float start_c = gl_in[0].gl_Position[1];
 
-  EndPrimitive();
+    if(data[0].bg != 0) {
+        width = ceil(width);
+        height = 1;
+    } else {
+        float left_offset = getAttribute(GLYPH_LEFT_OFFSET, index);
+        float top_offset = 1 - getAttribute(GLPYH_TOP_OFFSET, index);
+
+        start_r += top_offset;
+        start_c += left_offset;
+    }
+
+    // float p = (t - start_t)/(end_t - start_t); // percent of total time
+    // float p_2 = p*p;
+    // float p_3 = p_2*p;
+    // float progress = (p_3-2*p_2+p)*.4 + (-2*p_3+3*p_2) + (p_3 - p_2)*-.2;
+ 
+    fseed2 = data[0].seed;
+    fbg2 = data[0].bg;
+    fg = data[0].fg[0];
+            
+    ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
+    gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.0);
+    EmitVertex();
+    ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_TOP, index));
+    gl_Position = matrix * vec4(start_c, start_r + height, 0.0, 1.0);
+    EmitVertex();
+    ftex_o2 = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_BOTTOM, index));
+    gl_Position = matrix * vec4(start_c + width, start_r, 0.0, 1.0);
+    EmitVertex();
+    ftex_o2 = vec2(getAttribute(TEX_RIGHT, index),getAttribute(TEX_TOP, index));
+    gl_Position = matrix * vec4(start_c + width, start_r + height, 0.0, 1.0);
+    EmitVertex();
+
+    EndPrimitive();
 }  

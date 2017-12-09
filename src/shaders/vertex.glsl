@@ -6,16 +6,23 @@ in float start_t;
 in float end_t;
 in int bg;
 in int index;
-out float fseed;
-out vec2 ftex_o;
-flat out int fbg;
-flat out int findex;
+in mat4 fg;
+
+
+out VertexData {
+    mat4 fg;
+    float seed;
+    flat int bg;
+    flat int index;
+    
+} geom;
+
 
 void main() {
-  fseed = seed;
-  //ftex_o = tex_o;
-  fbg = bg;
-  findex = index;
-  gl_Position = vec4(pos[0],pos[1],0.,0.);
+    geom.seed = seed;
+    geom.bg = bg;
+    geom.index = index;
+    geom.fg = fg;
+    gl_Position = vec4(pos[0],pos[1],0.,0.);
 
 }

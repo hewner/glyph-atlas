@@ -69,8 +69,9 @@ fn main() {
 
          
             let r = r as f32;
-            let c = c as f32; 
-            let mut ag = AutoGlyph::new(&atlas_entry, r, c, 0., 20.);
+            let c = c as f32;
+            let fg = TimeVaryingVal::new(0.2,1.0,0.2,1.0);
+            let mut ag = AutoGlyph::new(&atlas_entry, r, c, fg, 0., 20.);
             ag.add_background_to_vertex_list(&mut boxes);
             ag.add_to_vertex_list(&mut boxes);
          
