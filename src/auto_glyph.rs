@@ -102,10 +102,12 @@ impl TimeVaryingVal {
         self.data[1][3] = v4;
     }
 
-    pub fn set_params(&mut self, v1:f32, v2:f32, v3:f32) {
+    // these params are for a cubic hermite spline
+    // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+    // plot (x^3-2x^2+x)*v1 + (-2x^3+3x^2) + (x^3 - x^2)*v2 from x=0 to 1
+    pub fn set_params(&mut self, v1:f32, v2:f32) {
         self.data[2][0] = v1;
         self.data[2][1] = v2;
-        self.data[2][2] = v3;
         self.data[3][3] = 1.;
     }    
 

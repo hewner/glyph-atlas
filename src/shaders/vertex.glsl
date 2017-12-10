@@ -14,7 +14,8 @@ out VertexData {
     float seed;
     flat int bg;
     flat int index;
-    
+    float start_t;
+    float end_t;
 } geom;
 
 
@@ -23,6 +24,8 @@ void main() {
     geom.bg = bg;
     geom.index = index;
     geom.fg = fg;
+    geom.start_t = start_t;
+    geom.end_t = end_t;
     gl_Position = vec4(pos[0],pos[1],0.,0.);
 
 }

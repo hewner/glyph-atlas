@@ -7,7 +7,8 @@ in VertexData {
     float seed;
     flat int bg;
     flat int index;
-
+    float start_t;
+    float end_t;
 } data[];
 
 
@@ -71,14 +72,16 @@ void main()
         start_c += left_offset;
     }
 
-    // float p = (t - start_t)/(end_t - start_t); // percent of total time
-    // float p_2 = p*p;
-    // float p_3 = p_2*p;
-    // float progress = (p_3-2*p_2+p)*.4 + (-2*p_3+3*p_2) + (p_3 - p_2)*-.2;
- 
+    float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t); // percent of total time
+    if(p > 1) p = 1;
+    float p_2 = p*p;
+    float p_3 = p_2*p;
+    float progress = (p_3-2*p_2+p)*data[0].fg[2][0] + (-2*p_3+3*p_2) + (p_3 - p_2)*data[0].fg[2][1];
+
+
+    fg = data[0].fg[0]*(1 - progress) + data[0].fg[1]*progress;
     fseed2 = data[0].seed;
     fbg2 = data[0].bg;
-    fg = data[0].fg[0];
             
     ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
     gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.0);
