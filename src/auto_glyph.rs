@@ -4,10 +4,7 @@ use rand;
 
 pub struct AutoGlyph {
     index:u32,
-    raw_r:f32,
-    raw_c:f32,
-    end_r:f32,
-    end_c:f32,
+    pos: TimeVaryingVal,
     start_t:f32,
     end_t:f32,
     fg : TimeVaryingVal
@@ -21,37 +18,28 @@ pub struct TimeVaryingVal {
 pub struct AutoGlyphV {
     index : u32,
     bg : u32,
-    pos: [f32; 2],
     seed: f32,
-    end_pos: [f32; 2],
+    pos: [[f32; 4]; 4],
     start_t: f32,
     end_t: f32,
     fg: [[f32; 4]; 4]
 }
 
-implement_vertex!(AutoGlyphV, pos, end_pos, seed, bg, start_t, end_t, index, fg);
+implement_vertex!(AutoGlyphV, pos, seed, bg, start_t, end_t, index, fg);
 
 pub type VertexList = Vec<AutoGlyphV>;
 
 
 impl AutoGlyph {
-    pub fn new(entry:&AtlasEntry, r:f32, c:f32, fg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
+    pub fn new(entry:&AtlasEntry, pos:TimeVaryingVal, fg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
 
         AutoGlyph {
-                    index: entry.index,
-                    raw_r: r,
-                    raw_c: c,
-                    end_r: r,
-                    end_c: c,
-                    fg : fg, 
-                    start_t:start_t,
-                    end_t:end_t
+            index: entry.index,
+            pos : pos,
+            fg : fg, 
+            start_t:start_t,
+            end_t:end_t
         }
-    }
-
-    pub fn set_end(&mut self,r:f32,c:f32) {
-        self.end_r = r;
-        self.end_c = c;
     }
 
     pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
@@ -71,8 +59,7 @@ impl AutoGlyphV {
 
         AutoGlyphV {
             index : ag.index,
-            pos : [ag.raw_r, ag.raw_c],
-            end_pos : [ag.end_r, ag.end_c],
+            pos : ag.pos.data(),
             bg : bg,
             fg : ag.fg.data(),
             seed : rand::random::<f32>(),

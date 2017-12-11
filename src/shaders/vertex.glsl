@@ -1,6 +1,5 @@
 #version 330
-in vec2 pos;
-in vec2 end_pos;
+in mat4 pos;
 in float seed;
 in float start_t;
 in float end_t;
@@ -16,6 +15,7 @@ out VertexData {
     flat int index;
     float start_t;
     float end_t;
+    mat4 pos;
 } geom;
 
 
@@ -26,6 +26,6 @@ void main() {
     geom.fg = fg;
     geom.start_t = start_t;
     geom.end_t = end_t;
-    gl_Position = vec4(pos[0],pos[1],0.,0.);
+    geom.pos = pos;
 
 }

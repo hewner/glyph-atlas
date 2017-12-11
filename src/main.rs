@@ -67,13 +67,17 @@ fn main() {
             let letter = 'A' as u8 + ((c + r) % 58) as u8;
             atlas_entry = atlas.get_entry(&display, letter as char);
 
+            let r_mod = rand::random::<f32>() * 200. - 100.;
+            let c_mod = rand::random::<f32>() * 200. - 100.;
          
-            let r = r as f32;
-            let c = c as f32;
+            let mut pos = TimeVaryingVal::new(r as f32,c as f32,0.,0.);
+            pos.set_end(r as f32 + r_mod,c as f32 + c_mod,0.,0.);
+            pos.set_params(0.4,-0.2);
             let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
             fg.set_end(0.,0.3,0.,1.0);
             fg.set_params(0.4,-0.2);
-            let mut ag = AutoGlyph::new(&atlas_entry, r, c, fg, 0., 10.);
+            
+            let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, 0., 10.);
             ag.add_background_to_vertex_list(&mut boxes);
             ag.add_to_vertex_list(&mut boxes);
          
