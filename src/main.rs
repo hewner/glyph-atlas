@@ -72,10 +72,11 @@ fn main() {
          
             let mut pos = TimeVaryingVal::new(r as f32,c as f32,0.,0.);
             pos.set_end(r as f32 + r_mod,c as f32 + c_mod,0.,0.);
-            pos.set_params(0.4,-0.2);
+            pos.set_chs_params(0.4,-0.2);
+            pos.make_linear();
             let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
             fg.set_end(0.,0.3,0.,1.0);
-            fg.set_params(0.4,-0.2);
+            fg.set_chs_params(0.4,-0.2);
             
             let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, 0., 10.);
             ag.add_background_to_vertex_list(&mut boxes);

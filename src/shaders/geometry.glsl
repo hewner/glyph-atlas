@@ -25,12 +25,6 @@ uniform sampler2D attributes;
 
 const int DONT_DRAW = -1;
 
-// corner
-const int UPPER_LEFT = 0;
-const int UPPER_RIGHT = 1;
-const int LOWER_LEFT = 2;
-const int LOWER_RIGHT = 3;
-
 // pos in attribute array
 const int TEX_LEFT = 0;
 const int TEX_RIGHT = 1;
@@ -41,6 +35,11 @@ const int GLYPH_HEIGHT = 5;
 const int GLYPH_LEFT_OFFSET = 6;
 const int GLPYH_TOP_OFFSET = 7;
 
+// settings for time varying values
+const int NON_VARYING = 0;
+const int LINEAR = 1;
+const int CHS = 2;
+
 float getAttribute(int slot, int index) {
     return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
     //return texelFetch(attributes, ivec2(slot, index), 0)[0];
@@ -50,12 +49,14 @@ float rand(float fseed, float seed){
     return fract(sin(dot(vec2(fseed,seed),vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float progress(vec2 params) {
+float progress(mat4 params) {
+    if(params[3][3] == NON_VARYING) return 0.;
     float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t); // percent of total time
     if(p > 1) return 1.;
+    if(params[3][3] == LINEAR) return p;
     float p_2 = p*p;
     float p_3 = p_2*p;
-    return (p_3-2*p_2+p)*params[0] + (-2*p_3+3*p_2) + (p_3 - p_2)*params[1];
+    return (p_3-2*p_2+p)*params[2][0] + (-2*p_3+3*p_2) + (p_3 - p_2)*params[2][1];
 }
 
 vec4 interpolate(float progress, vec4 v1, vec4 v2) {
@@ -70,7 +71,7 @@ void main()
     //index = int(rand(data[0].seed,t)*(max_index+1));
     float width = getAttribute(GLYPH_WIDTH, index);
     float height = getAttribute(GLYPH_HEIGHT, index);
-    vec4 mod_pos = interpolate(progress(data[0].pos[2].xy),
+    vec4 mod_pos = interpolate(progress(data[0].pos),
                                data[0].pos[0],
                                data[0].pos[1]);
     float start_r = mod_pos[0];
@@ -87,7 +88,7 @@ void main()
         start_c += left_offset;
     }
 
-    fg = interpolate(progress(data[0].fg[2].xy), data[0].fg[0], data[0].fg[1]);
+    fg = interpolate(progress(data[0].fg), data[0].fg[0], data[0].fg[1]);
 
     fseed2 = data[0].seed;
     fbg2 = data[0].bg;
