@@ -1,11 +1,11 @@
 #version 330
 layout(points) in;
-layout(triangle_strip, max_vertices=4) out;
+layout(triangle_strip, max_vertices=8) out;
 
 in VertexData {
     mat4 fg;
+    mat4 bg;
     float seed;
-    flat int bg;
     flat int index;
     float start_t;
     float end_t;
@@ -77,21 +77,40 @@ void main()
     float start_r = mod_pos[0];
     float start_c = mod_pos[1];
 
-    if(data[0].bg != 0) {
-        width = ceil(width);
-        height = 1;
-    } else {
-        float left_offset = getAttribute(GLYPH_LEFT_OFFSET, index);
-        float top_offset = 1 - getAttribute(GLPYH_TOP_OFFSET, index);
+    fseed2 = data[0].seed;
+    // FIRST OUTPUT BACKGROUND
+    
+    fbg2 = 1;
 
-        start_r += top_offset;
-        start_c += left_offset;
-    }
+    fg = interpolate(progress(data[0].bg), data[0].bg[0], data[0].bg[1]);
+    
+    float bgwidth = ceil(width);
+    float bgheight = 1;
+    gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.);
+    EmitVertex();
+    gl_Position = matrix * vec4(start_c, start_r + bgheight, 0.0, 1.);
+    EmitVertex();
+    gl_Position = matrix * vec4(start_c + bgwidth, start_r, 0.0, 1.);
+    EmitVertex();
+    gl_Position = matrix * vec4(start_c + bgwidth, start_r + bgheight, 0.0, 1.);
+    EmitVertex();
+
+    EndPrimitive();
+
+    
+    //if(data[0].bg != 0) {
+    //    width = ceil(width);
+    //    height = 1;
+    //} else {
+    float left_offset = getAttribute(GLYPH_LEFT_OFFSET, index);
+    float top_offset = 1 - getAttribute(GLPYH_TOP_OFFSET, index);
+
+    start_r += top_offset;
+    start_c += left_offset;
+        //}
 
     fg = interpolate(progress(data[0].fg), data[0].fg[0], data[0].fg[1]);
-
-    fseed2 = data[0].seed;
-    fbg2 = data[0].bg;
+    fbg2 = 0;
             
     ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));
     gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.0);
@@ -107,4 +126,9 @@ void main()
     EmitVertex();
 
     EndPrimitive();
+
+    start_r = mod_pos[0];
+    start_c = mod_pos[1];
+
+
 }  

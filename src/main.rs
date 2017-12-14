@@ -38,7 +38,7 @@ fn main() {
 
     let font = FontDesc::new(String::from("monospace"),
                              font::Style::Description {slant: font::Slant::Normal, weight: font::Weight::Normal});
-    let size = font::Size::new(5.);
+    let size = font::Size::new(12.);
 
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
     ///***************END FONTS
@@ -74,12 +74,16 @@ fn main() {
             pos.set_end(r as f32 + r_mod,c as f32 + c_mod,0.,0.);
             pos.set_chs_params(0.4,-0.2);
             pos.make_linear();
+
             let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
             fg.set_end(0.,0.3,0.,1.0);
             fg.set_chs_params(0.4,-0.2);
-            
-            let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, 0., 10.);
-            ag.add_background_to_vertex_list(&mut boxes);
+
+            let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
+            bg.set_end(0.5,0.,0.5,1.0);
+            bg.set_chs_params(0.4,-0.2);
+
+            let ag = AutoGlyph::new(&atlas_entry, pos, fg, bg, 0., 10.);
             ag.add_to_vertex_list(&mut boxes);
          
         }

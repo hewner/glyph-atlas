@@ -7,7 +7,8 @@ pub struct AutoGlyph {
     pos: TimeVaryingVal,
     start_t:f32,
     end_t:f32,
-    fg : TimeVaryingVal
+    fg : TimeVaryingVal,
+    bg : TimeVaryingVal
 }
 
 pub struct TimeVaryingVal {
@@ -24,12 +25,12 @@ enum VaryingType {
 #[derive(Copy, Clone)]
 pub struct AutoGlyphV {
     index : u32,
-    bg : u32,
     seed: f32,
     pos: [[f32; 4]; 4],
     start_t: f32,
     end_t: f32,
-    fg: [[f32; 4]; 4]
+    fg: [[f32; 4]; 4],
+    bg: [[f32; 4]; 4]
 }
 
 implement_vertex!(AutoGlyphV, pos, seed, bg, start_t, end_t, index, fg);
@@ -38,36 +39,33 @@ pub type VertexList = Vec<AutoGlyphV>;
 
 
 impl AutoGlyph {
-    pub fn new(entry:&AtlasEntry, pos:TimeVaryingVal, fg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
+    pub fn new(entry:&AtlasEntry, pos:TimeVaryingVal, fg: TimeVaryingVal, bg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
 
         AutoGlyph {
             index: entry.index,
             pos : pos,
-            fg : fg, 
+            fg : fg,
+            bg : bg, 
             start_t:start_t,
             end_t:end_t
         }
     }
 
     pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
-        list.push(AutoGlyphV::from_ag(self, 0));
+        list.push(AutoGlyphV::from_ag(self));
 
-    }
-
-    pub fn add_background_to_vertex_list(&self, list:&mut  VertexList) {
-        list.push(AutoGlyphV::from_ag(self, 1));
     }
 
 }
 
 impl AutoGlyphV {
-    fn from_ag(ag:&AutoGlyph, bg:u32) -> AutoGlyphV {
+    fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
         
 
         AutoGlyphV {
             index : ag.index,
             pos : ag.pos.data(),
-            bg : bg,
+            bg : ag.bg.data(),
             fg : ag.fg.data(),
             seed : rand::random::<f32>(),
             start_t: ag.start_t,
