@@ -1,5 +1,4 @@
 #version 330
-in float fseed2;
 flat in int fbg2;
 in vec2 ftex_o2;
 in vec4 fg;

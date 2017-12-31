@@ -1,25 +1,30 @@
 #version 330
 in mat4 pos;
-in float seed;
+//in float seed;
 in float start_t;
 in float end_t;
 in int index;
-in mat4 fg;
-in mat4 bg;
+in vec4 fg;
+in vec4 bg;
+
+in int special;
+in mat4 special_data;
 
 out VertexData {
-    mat4 fg;
-    mat4 bg;
-    float seed;
+    vec4 fg;
+    vec4 bg;
+    //    float seed;
     flat int index;
+    flat int special;
     float start_t;
     float end_t;
     mat4 pos;
+    mat4 special_data;
 } geom;
 
 
 void main() {
-    geom.seed = seed;
+    //    geom.seed = seed;
     geom.bg = bg;
     geom.index = index;
     geom.fg = fg;
@@ -27,5 +32,6 @@ void main() {
     geom.start_t = start_t;
     geom.end_t = end_t;
     geom.pos = pos;
-
+    geom.special = special;
+    geom.special_data = special_data;
 }

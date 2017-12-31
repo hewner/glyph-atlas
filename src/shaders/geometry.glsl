@@ -3,17 +3,18 @@ layout(points) in;
 layout(triangle_strip, max_vertices=8) out;
 
 in VertexData {
-    mat4 fg;
-    mat4 bg;
-    float seed;
+    vec4 fg;
+    vec4 bg;
+    //    float seed;
     flat int index;
+    flat int special;
     float start_t;
     float end_t;
     mat4 pos;
+    mat4 special_data;
 } data[];
 
 
-out float fseed2;
 out vec2 ftex_o2;
 out vec4 fg;
 flat out int fbg2;
@@ -39,6 +40,10 @@ const int GLPYH_TOP_OFFSET = 7;
 const int NON_VARYING = 0;
 const int LINEAR = 1;
 const int CHS = 2;
+
+// settings for special
+const int BG_VARYING = 1;
+const int FG_VARYING = 2;
 
 float getAttribute(int slot, int index) {
     return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
@@ -77,13 +82,15 @@ void main()
     float start_r = mod_pos[0];
     float start_c = mod_pos[1];
 
-    fseed2 = data[0].seed;
     // FIRST OUTPUT BACKGROUND
+
     
     fbg2 = 1;
-
-    fg = interpolate(progress(data[0].bg), data[0].bg[0], data[0].bg[1]);
-    
+    if(data[0].special == BG_VARYING) {
+        fg = interpolate(progress(data[0].special_data), data[0].special_data[0], data[0].special_data[1]);
+    } else {
+        fg = data[0].bg;
+    }
     float bgwidth = ceil(width);
     float bgheight = 1;
     gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.);
@@ -109,7 +116,13 @@ void main()
     start_c += left_offset;
         //}
 
-    fg = interpolate(progress(data[0].fg), data[0].fg[0], data[0].fg[1]);
+
+    if(data[0].special == FG_VARYING) {
+        fg = interpolate(progress(data[0].special_data), data[0].special_data[0], data[0].special_data[1]);
+    } else {
+        fg = data[0].fg;
+    }
+
     fbg2 = 0;
             
     ftex_o2 = vec2(getAttribute(TEX_LEFT, index),getAttribute(TEX_BOTTOM, index));

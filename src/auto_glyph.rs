@@ -29,11 +29,13 @@ pub struct AutoGlyphV {
     pos: [[f32; 4]; 4],
     start_t: f32,
     end_t: f32,
-    fg: [[f32; 4]; 4],
-    bg: [[f32; 4]; 4]
+    fg: [f32; 4],
+    bg: [f32; 4],
+    special: u32,
+    special_data: [[f32; 4]; 4],
 }
 
-implement_vertex!(AutoGlyphV, pos, seed, bg, start_t, end_t, index, fg);
+implement_vertex!(AutoGlyphV, pos, seed, bg, start_t, end_t, index, fg, special, special_data);
 
 pub type VertexList = Vec<AutoGlyphV>;
 
@@ -65,11 +67,13 @@ impl AutoGlyphV {
         AutoGlyphV {
             index : ag.index,
             pos : ag.pos.data(),
-            bg : ag.bg.data(),
-            fg : ag.fg.data(),
+            bg : ag.bg.data()[0],
+            fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
             start_t: ag.start_t,
-            end_t: ag.end_t
+            end_t: ag.end_t,
+            special : 2,
+            special_data: ag.fg.data(),
         }
     }
 }
