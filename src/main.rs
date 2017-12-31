@@ -9,7 +9,7 @@ use font::{Rasterize, FontDesc};
 use std::{time};
 use std::fs::File;
 use std::io::Read;
-//use rand::Rng;
+use std::env;
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -18,7 +18,14 @@ use auto_glyph::*;
 use glyph_atlas::*;
 
 fn file_as_string(filename:&str)->String {
-    let mut file = File::open(filename).unwrap();
+    let result = File::open(filename);
+    if result.is_err() {
+        let path = env::current_dir().unwrap();
+        println!("filename: {} current path: {}",
+                filename,
+                path.display());
+    }
+    let mut file = result.unwrap();  // I still want to panic on error
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
     contents
