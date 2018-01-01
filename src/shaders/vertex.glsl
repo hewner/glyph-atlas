@@ -1,9 +1,10 @@
 #version 330
 in vec4 pos;
-//in float seed;
+in float seed;
 in float start_t;
 in float end_t;
 in int index;
+in int randomizations;
 in vec4 fg;
 in vec4 bg;
 
@@ -13,9 +14,10 @@ in mat4 special_data;
 out VertexData {
     vec4 fg;
     vec4 bg;
-    //    float seed;
+    float seed;
     flat int index;
     flat int special;
+    flat int randomizations;
     float start_t;
     float end_t;
     vec4 pos;
@@ -24,7 +26,8 @@ out VertexData {
 
 
 void main() {
-    //    geom.seed = seed;
+    geom.seed = seed;
+    geom.randomizations = randomizations;
     geom.bg = bg;
     geom.index = index;
     geom.fg = fg;

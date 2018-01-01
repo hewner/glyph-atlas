@@ -7,6 +7,7 @@ pub struct AutoGlyph {
     pos: TimeVaryingVal,
     start_t:f32,
     end_t:f32,
+    randomizations:u32,
     fg : TimeVaryingVal,
     bg : TimeVaryingVal
 }
@@ -25,6 +26,7 @@ enum VaryingType {
 #[derive(Copy, Clone)]
 pub struct AutoGlyphV {
     index : u32,
+    randomizations : u32,
     seed: f32,
     pos: [f32; 4],
     start_t: f32,
@@ -35,7 +37,17 @@ pub struct AutoGlyphV {
     special_data: [[f32; 4]; 4],
 }
 
-implement_vertex!(AutoGlyphV, pos, seed, bg, start_t, end_t, index, fg, special, special_data);
+implement_vertex!(AutoGlyphV,
+                  pos,
+                  seed,
+                  bg,
+                  start_t,
+                  end_t,
+                  index,
+                  fg,
+                  special,
+                  special_data,
+                  randomizations);
 
 pub type VertexList = Vec<AutoGlyphV>;
 
@@ -49,13 +61,18 @@ impl AutoGlyph {
             fg : fg,
             bg : bg, 
             start_t:start_t,
-            end_t:end_t
+            end_t:end_t,
+            randomizations:0
         }
     }
 
     pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
         list.push(AutoGlyphV::from_ag(self));
 
+    }
+
+    pub fn set_randomizations(&mut self, num:u32) {
+        self.randomizations = num
     }
 
 }
@@ -84,7 +101,7 @@ impl AutoGlyphV {
             num_specials += 1;
         }
 
-        if(num_specials > 1) {
+        if num_specials > 1 {
             println!("More than 1 time varying not supported!");
         }
         AutoGlyphV {
@@ -93,6 +110,7 @@ impl AutoGlyphV {
             bg : ag.bg.data()[0],
             fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
+            randomizations : ag.randomizations,
             start_t: ag.start_t,
             end_t: ag.end_t,
             special : special,

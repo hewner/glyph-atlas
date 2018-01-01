@@ -5,9 +5,10 @@ layout(triangle_strip, max_vertices=8) out;
 in VertexData {
     vec4 fg;
     vec4 bg;
-    //    float seed;
+    float seed;
     flat int index;
     flat int special;
+    flat int randomizations;
     float start_t;
     float end_t;
     vec4 pos;
@@ -73,8 +74,17 @@ void main()
 {
 
 
-    int index = data[0].index;
-    //index = int(rand(data[0].seed,t)*(max_index+1));
+    int index;
+    if(data[0].randomizations == 0) {
+        index = data[0].index;
+    } else {
+        float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t);
+        if(p > 1) p = 1;
+        float timeslot = floor(p*data[0].randomizations + data[0].seed);
+        index = int(rand(data[0].seed,timeslot)*(max_index+1));
+    }
+    
+    
     float width = getAttribute(GLYPH_WIDTH, index);
     float height = getAttribute(GLYPH_HEIGHT, index);
     
