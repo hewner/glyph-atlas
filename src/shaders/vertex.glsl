@@ -1,5 +1,5 @@
 #version 330
-in mat4 pos;
+in vec4 pos;
 //in float seed;
 in float start_t;
 in float end_t;
@@ -18,7 +18,7 @@ out VertexData {
     flat int special;
     float start_t;
     float end_t;
-    mat4 pos;
+    vec4 pos;
     mat4 special_data;
 } geom;
 

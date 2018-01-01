@@ -26,7 +26,7 @@ enum VaryingType {
 pub struct AutoGlyphV {
     index : u32,
     seed: f32,
-    pos: [[f32; 4]; 4],
+    pos: [f32; 4],
     start_t: f32,
     end_t: f32,
     fg: [f32; 4],
@@ -62,18 +62,41 @@ impl AutoGlyph {
 
 impl AutoGlyphV {
     fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
+        let mut special = 0;
+        let mut special_data = [[0.; 4]; 4];
+        let mut num_specials = 0;
         
+        if ag.pos.is_variable() {
+            special = 3;
+            special_data = ag.pos.data();
+            num_specials += 1;
+        }
 
+        if ag.fg.is_variable() {
+            special = 2;
+            special_data = ag.fg.data();
+            num_specials += 1;
+        }
+
+        if ag.bg.is_variable() {
+            special = 1;
+            special_data = ag.bg.data();
+            num_specials += 1;
+        }
+
+        if(num_specials > 1) {
+            println!("More than 1 time varying not supported!");
+        }
         AutoGlyphV {
             index : ag.index,
-            pos : ag.pos.data(),
+            pos : ag.pos.data()[0],
             bg : ag.bg.data()[0],
             fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
             start_t: ag.start_t,
             end_t: ag.end_t,
-            special : 2,
-            special_data: ag.fg.data(),
+            special : special,
+            special_data: special_data,
         }
     }
 }
@@ -117,6 +140,10 @@ impl TimeVaryingVal {
         self.set_varying(VaryingType::NonVarying);
     }
 
+
+    pub fn is_variable(&self) -> bool {
+        self.data[3][3] != 0.
+    }
 
     pub fn make_linear(&mut self) {
         self.set_varying(VaryingType::Linear);

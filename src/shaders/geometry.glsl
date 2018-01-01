@@ -10,7 +10,7 @@ in VertexData {
     flat int special;
     float start_t;
     float end_t;
-    mat4 pos;
+    vec4 pos;
     mat4 special_data;
 } data[];
 
@@ -44,6 +44,7 @@ const int CHS = 2;
 // settings for special
 const int BG_VARYING = 1;
 const int FG_VARYING = 2;
+const int POS_VARYING = 3;
 
 float getAttribute(int slot, int index) {
     return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
@@ -76,9 +77,15 @@ void main()
     //index = int(rand(data[0].seed,t)*(max_index+1));
     float width = getAttribute(GLYPH_WIDTH, index);
     float height = getAttribute(GLYPH_HEIGHT, index);
-    vec4 mod_pos = interpolate(progress(data[0].pos),
-                               data[0].pos[0],
-                               data[0].pos[1]);
+    
+    vec4 mod_pos;
+    if(data[0].special == POS_VARYING) {
+        mod_pos = interpolate(progress(data[0].special_data),
+                              data[0].special_data[0],
+                              data[0].special_data[1]);
+    } else {
+        mod_pos = data[0].pos;
+    }
     float start_r = mod_pos[0];
     float start_c = mod_pos[1];
 

@@ -83,12 +83,12 @@ fn main() {
             pos.make_linear();
 
             let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
-            fg.set_end(0.,0.3,0.,1.0);
-            fg.set_chs_params(0.4,-0.2);
+            //fg.set_end(0.,0.3,0.,1.0);
+            //fg.set_chs_params(0.4,-0.2);
 
             let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
-            bg.set_end(0.5,0.,0.5,1.0);
-            bg.set_chs_params(0.4,-0.2);
+            //bg.set_end(0.5,0.,0.5,1.0);
+            //bg.set_chs_params(0.4,-0.2);
 
             let ag = AutoGlyph::new(&atlas_entry, pos, fg, bg, 0., 10.);
             ag.add_to_vertex_list(&mut boxes);
