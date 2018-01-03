@@ -91,7 +91,7 @@ fn main() {
             //bg.set_chs_params(0.4,-0.2);
 
             let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, bg, 0., 10.);
-            ag.set_randomizations(45);
+            ag.set_nonlinear_randomizations(45, 0.4, -0.2);
             ag.add_to_vertex_list(&mut boxes);
          
         }

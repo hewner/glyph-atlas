@@ -7,7 +7,7 @@ pub struct AutoGlyph {
     pos: TimeVaryingVal,
     start_t:f32,
     end_t:f32,
-    randomizations:u32,
+    randomizations: TimeVaryingVal,
     fg : TimeVaryingVal,
     bg : TimeVaryingVal
 }
@@ -62,7 +62,7 @@ impl AutoGlyph {
             bg : bg, 
             start_t:start_t,
             end_t:end_t,
-            randomizations:0
+            randomizations: TimeVaryingVal::new(0.,0.,0.,0.)
         }
     }
 
@@ -72,7 +72,13 @@ impl AutoGlyph {
     }
 
     pub fn set_randomizations(&mut self, num:u32) {
-        self.randomizations = num
+        self.randomizations = TimeVaryingVal::new(num as f32,0.,0.,0.);
+    }
+
+    pub fn set_nonlinear_randomizations(&mut self, num:u32, param1:f32, param2:f32) {
+        let mut value = TimeVaryingVal::new(num as f32,0.,0.,0.);
+        value.set_chs_params(param1,param2);
+        self.randomizations = value;
     }
 
 }
@@ -82,6 +88,12 @@ impl AutoGlyphV {
         let mut special = 0;
         let mut special_data = [[0.; 4]; 4];
         let mut num_specials = 0;
+
+        if ag.randomizations.is_variable() {
+            special = 4;
+            special_data = ag.randomizations.data();
+            num_specials += 1;
+        }
         
         if ag.pos.is_variable() {
             special = 3;
@@ -110,7 +122,7 @@ impl AutoGlyphV {
             bg : ag.bg.data()[0],
             fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
-            randomizations : ag.randomizations,
+            randomizations : ag.randomizations.data()[0][0] as u32,
             start_t: ag.start_t,
             end_t: ag.end_t,
             special : special,

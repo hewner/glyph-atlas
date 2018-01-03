@@ -46,6 +46,7 @@ const int CHS = 2;
 const int BG_VARYING = 1;
 const int FG_VARYING = 2;
 const int POS_VARYING = 3;
+const int RANDOM_VARYING = 4;
 
 float getAttribute(int slot, int index) {
     return texture(attributes, vec2((slot + .5)/8., (index + .5)/1024.))[0];
@@ -72,14 +73,18 @@ vec4 interpolate(float progress, vec4 v1, vec4 v2) {
 
 void main()
 {
-
-
     int index;
     if(data[0].randomizations == 0) {
         index = data[0].index;
     } else {
-        float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t);
-        if(p > 1) p = 1;
+        
+        float p;
+        if(data[0].special == RANDOM_VARYING) {
+            p = progress(data[0].special_data);
+        } else {
+            p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t);
+            if(p > 1) p = 1;
+        }
         float timeslot = floor(p*data[0].randomizations + data[0].seed);
         index = int(rand(data[0].seed,timeslot)*(max_index+1));
     }
