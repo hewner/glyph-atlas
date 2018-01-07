@@ -176,7 +176,16 @@ fn main() {
                     glutin::WindowEvent::Closed => closed = true,
                     _ => ()
                 },
-                _ => (),
+                glutin::Event::DeviceEvent { event, .. } => match event {
+                    glutin::DeviceEvent::Key(input) => {
+                        match input.virtual_keycode {
+                            Some(glutin::VirtualKeyCode::Escape) => closed = true,
+                            _ => ()
+                        }
+                    },
+                    _ => ()
+                },
+                _ => ()
             }
         });
     }
