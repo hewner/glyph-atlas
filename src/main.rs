@@ -13,9 +13,11 @@ use std::env;
 
 mod auto_glyph;
 mod glyph_atlas;
-
+mod glyph_batch;
+    
 use auto_glyph::*;
 use glyph_atlas::*;
+use glyph_batch::*;
 
 fn file_as_string(filename:&str)->String {
     let result = File::open(filename);
@@ -66,8 +68,8 @@ fn main() {
     let num_rows = (window_height/char_height) as u32;
 
     let num_cells = num_rows*num_cols;
-    let mut boxes = VertexList::with_capacity(6*num_cells as usize);
-    let mut rng = rand::thread_rng();
+    let mut boxes = Vec::new();
+    //let mut rng = rand::thread_rng();
     for r in 0..num_rows {
         for c in 0..num_cols {
             let atlas_entry;
@@ -92,47 +94,36 @@ fn main() {
 
             let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, bg, 0., 10.);
             ag.set_nonlinear_randomizations(45, 0.4, -0.2);
-            ag.add_to_vertex_list(&mut boxes);
+            boxes.push(ag);
          
         }
     }
 
-
+    let batch = GlyphBatch::new(&display, &boxes);
     
     // plot (x^3-2x^2+x)*.5 + (-2x^3+3x^2) + (x^3 - x^2)*-.6 from x=0 to 1
     // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
 
 
 /*
-    let atlas_entry = atlas.get_entry(&display, 'の');
-    let mut ag = AutoGlyph::new(&atlas_entry, 1., 1., 0., 100.);
-
-    ag.add_background_to_vertex_list(&mut boxes);
-    ag.add_to_vertex_list(&mut boxes);
-
-
-    let atlas_entry = atlas.get_entry(&display, 'q');
-    let mut ag = AutoGlyph::new(&atlas_entry, 5., 5., 0., 100.);
-
-    ag.add_background_to_vertex_list(&mut boxes);
-    ag.add_to_vertex_list(&mut boxes);
-
-
     let atlas_entry = atlas.get_entry(&display, 'Q');
-    let mut ag = AutoGlyph::new(&atlas_entry, 5., 6., 0., 100.);
+    let mut pos = TimeVaryingVal::new(1.,1.,0.,0.);
+    let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
+    let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
+    let mut ag = AutoGlyph::new(&atlas_entry, pos, fg, bg, 0., 10.);
 
-    ag.add_background_to_vertex_list(&mut boxes);
-    ag.add_to_vertex_list(&mut boxes);
 
-
-    let atlas_entry = atlas.get_entry(&display, ')');
-    let mut ag = AutoGlyph::new(&atlas_entry, 5., 7., 0., 100.);
-
-    ag.add_background_to_vertex_list(&mut boxes);
-    ag.add_to_vertex_list(&mut boxes);
+    //ag.add_to_vertex_list(&mut boxes);
 */
     
-    let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
+    //let vertex_buffer = glium::VertexBuffer::new(&display, &boxes).unwrap();
+    //let mut vertex_buffer = glium::VertexBuffer::empty_dynamic(&display, 1).unwrap();
+    //{
+
+    //    let mut map = vertex_buffer.map();
+    //    map[0] = AutoGlyphV::from_ag(&ag);
+    //    map.z();
+    // }
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::Points);
 
 
@@ -172,7 +163,7 @@ fn main() {
             blend: glium::draw_parameters::Blend::alpha_blending(),
             .. Default::default()
         };
-        target.draw(&vertex_buffer, &indices, &program, &uniforms,
+        target.draw(batch.buffer(), &indices, &program, &uniforms,
                     &params).unwrap();
         target.finish().unwrap();
 

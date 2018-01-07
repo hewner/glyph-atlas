@@ -84,7 +84,7 @@ impl AutoGlyph {
 }
 
 impl AutoGlyphV {
-    fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
+    pub fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
         let mut special = 0;
         let mut special_data = [[0.; 4]; 4];
         let mut num_specials = 0;
