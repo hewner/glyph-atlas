@@ -60,7 +60,7 @@ float rand(float fseed, float seed){
 float progress(mat4 params) {
     if(params[3][3] == NON_VARYING) return 0.;
     float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t); // percent of total time
-    if(p > 1) return 1.;
+    // if(p > 1) return 1.;
     if(params[3][3] == LINEAR) return p;
     float p_2 = p*p;
     float p_3 = p_2*p;
@@ -73,6 +73,8 @@ vec4 interpolate(float progress, vec4 v1, vec4 v2) {
 
 void main()
 {
+    if(t > data[0].end_t) return;
+    
     int index;
     if(data[0].randomizations == 0) {
         index = data[0].index;
@@ -83,7 +85,7 @@ void main()
             p = progress(data[0].special_data);
         } else {
             p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t);
-            if(p > 1) p = 1;
+            // if(p > 1) p = 1;
         }
         float timeslot = floor(p*data[0].randomizations + data[0].seed);
         index = int(rand(data[0].seed,timeslot)*(max_index+1));

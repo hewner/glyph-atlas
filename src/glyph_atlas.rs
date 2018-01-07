@@ -113,8 +113,7 @@ impl GlyphAtlas {
         return result;
     }
     
-    pub fn get_entry<F>(&mut self, display:&F, c:char) -> AtlasEntry
-        where F:glium::backend::Facade
+    pub fn get_entry(&mut self, display:&glium::backend::Facade, c:char) -> AtlasEntry
     {
         if self.map.contains_key(&c) {
             self.map.get(&c).unwrap().clone()
