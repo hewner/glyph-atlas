@@ -81,6 +81,10 @@ impl AutoGlyph {
         self.randomizations = value;
     }
 
+    pub fn end_t(&self) -> f32 {
+        self.end_t
+    }
+
 }
 
 impl AutoGlyphV {

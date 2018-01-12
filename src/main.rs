@@ -87,7 +87,6 @@ fn main() {
     let window_width = 1900.;
     let window_height = 1000.;
 
-    ///**************FONTS
     let rasterizer = font::Rasterizer::new(108., 110., 1., false).unwrap();
 
     let font = FontDesc::new(String::from("monospace"),
@@ -95,7 +94,6 @@ fn main() {
     let size = font::Size::new(12.);
 
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
-    ///***************END FONTS
 
     
     let mut events_loop = glutin::EventsLoop::new();
@@ -162,26 +160,27 @@ fn main() {
         let dur = now - start;
         let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
         {
-        let uniforms = uniform! { t: t,
-                                  matrix : matrix,
-                                  tex : atlas.texture(),
-                                  attributes : atlas.attribute_texture(),
-                                  max_index : (atlas.size() - 1) as i32
-        };
+            let uniforms = uniform! { t: t,
+                                      matrix : matrix,
+                                      tex : atlas.texture(),
+                                      attributes : atlas.attribute_texture(),
+                                      max_index : (atlas.size() - 1) as i32
+            };
         
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
-        let params = glium::DrawParameters {
-            blend: glium::draw_parameters::Blend::alpha_blending(),
-            .. Default::default()
-        };
-        for batch in &batches {
-            target.draw(batch.buffer(), &indices, &program, &uniforms,
-                        &params).unwrap();
-        }
+            target.clear_color(0.0, 0.0, 1.0, 1.0);
+            let params = glium::DrawParameters {
+                blend: glium::draw_parameters::Blend::alpha_blending(),
+                .. Default::default()
+            };
+            batches.retain ( |ref b| b.latest_end() > t );
+            for batch in &batches {
+                target.draw(batch.buffer(), &indices, &program, &uniforms,
+                            &params).unwrap();
+            }
         }
         target.finish().unwrap();
 
-        println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
+        //println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
         //let ten_millis = time::Duration::from_millis(500);
         //thread::sleep(ten_millis);
         events_loop.poll_events(|event| {
