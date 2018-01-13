@@ -6,10 +6,10 @@ extern crate fnv;
 extern crate rand;
 
 use font::{Rasterize, FontDesc};
-use std::{time};
+use std::{time, env, thread};
 use std::fs::File;
 use std::io::Read;
-use std::env;
+use std::sync::mpsc;
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -34,18 +34,15 @@ fn file_as_string(filename:&str)->String {
     contents
 }
 
-fn generate_batch(display:&glium::backend::Facade,
-                  atlas:&mut GlyphAtlas,
-                  num_rows: u32,
+fn generate_batch(num_rows: u32,
                   num_cols: u32,
-                  start_t: f32) -> GlyphBatch {
+                  start_t: f32) -> Vec<AutoGlyph> {
    let mut boxes = Vec::new();
     //let mut rng = rand::thread_rng();
     for r in 0..num_rows {
         for c in 0..num_cols {
-            let atlas_entry;
             let letter = 'A' as u8 + ((c + r) % 58) as u8;
-            atlas_entry = atlas.get_entry(display, letter as char);
+            //atlas_entry = atlas.get_entry(display, letter as char);
 
             let r_mod = rand::random::<f32>();
             if r_mod > 0.1 { continue; } 
@@ -63,7 +60,7 @@ fn generate_batch(display:&glium::backend::Facade,
             //bg.set_end(0.5,0.,0.5,1.0);
             //bg.set_chs_params(0.4,-0.2);
 
-            let mut ag = AutoGlyph::new(&atlas_entry,
+            let mut ag = AutoGlyph::new(letter as char,
                                         pos,
                                         fg,
                                         bg,
@@ -75,7 +72,7 @@ fn generate_batch(display:&glium::backend::Facade,
         }
     }
 
-    GlyphBatch::new(display, &boxes)
+    boxes
 }
 
 fn main() {
@@ -154,6 +151,16 @@ fn main() {
 
     let start = time::Instant::now();
     let mut batches:Vec<GlyphBatch> = Vec::new();
+
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+    });
+
+
     while !closed {
         let mut target = display.draw();
         let now = time::Instant::now();
@@ -195,11 +202,13 @@ fn main() {
                             Some(glutin::VirtualKeyCode::Escape) => closed = true,
                             Some(glutin::VirtualKeyCode::A) => {
                                 println!("YES!\n");
-                                batches.push(generate_batch(&display,
+                                let vertexes = generate_batch(num_rows,
+                                                              num_cols,
+                                                              t);
+                                let batch = GlyphBatch::new(&display,
                                                             &mut atlas,
-                                                            num_rows,
-                                                            num_cols,
-                                                            t));
+                                                            &vertexes);
+                                batches.push(batch);
                                 },
                             _ => ()
                         }

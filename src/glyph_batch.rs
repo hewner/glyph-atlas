@@ -1,4 +1,5 @@
 use auto_glyph::{AutoGlyph, AutoGlyphV};
+use glyph_atlas::GlyphAtlas;
 use glium::backend::Facade;
 use glium::VertexBuffer;
 
@@ -9,13 +10,15 @@ pub struct GlyphBatch {
 
 impl GlyphBatch {
 
-    pub fn new(display:&Facade, unconverted_glyphs:&[AutoGlyph]) -> GlyphBatch {
+    pub fn new(display:&Facade,
+               atlas:&mut GlyphAtlas,
+               unconverted_glyphs:&[AutoGlyph]) -> GlyphBatch {
         let mut latest_end:f32 = 0.;
         let glyphs:Vec<AutoGlyphV>;
         {
             let iter = unconverted_glyphs.iter().map(|g| {
                 if latest_end <  g.end_t() { latest_end = g.end_t() }
-                AutoGlyphV::from_ag(g)
+                AutoGlyphV::from_ag(display, atlas, g)
             });
             glyphs = iter.collect();
         }

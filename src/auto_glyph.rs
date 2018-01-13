@@ -1,9 +1,10 @@
 
-use glyph_atlas::AtlasEntry;
+use glyph_atlas::{GlyphAtlas};
+use glium;
 use rand;
 
 pub struct AutoGlyph {
-    index:u32,
+    glyph:char,
     pos: TimeVaryingVal,
     start_t:f32,
     end_t:f32,
@@ -53,10 +54,10 @@ pub type VertexList = Vec<AutoGlyphV>;
 
 
 impl AutoGlyph {
-    pub fn new(entry:&AtlasEntry, pos:TimeVaryingVal, fg: TimeVaryingVal, bg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
+    pub fn new(glyph:char, pos:TimeVaryingVal, fg: TimeVaryingVal, bg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
 
         AutoGlyph {
-            index: entry.index,
+            glyph : glyph,
             pos : pos,
             fg : fg,
             bg : bg, 
@@ -64,11 +65,6 @@ impl AutoGlyph {
             end_t:end_t,
             randomizations: TimeVaryingVal::new(0.,0.,0.,0.)
         }
-    }
-
-    pub fn add_to_vertex_list(&self, list:&mut  VertexList) {
-        list.push(AutoGlyphV::from_ag(self));
-
     }
 
     pub fn set_randomizations(&mut self, num:u32) {
@@ -88,7 +84,12 @@ impl AutoGlyph {
 }
 
 impl AutoGlyphV {
-    pub fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
+    pub fn from_ag( display:&glium::backend::Facade,
+                    atlas:&mut GlyphAtlas,
+                    ag:&AutoGlyph) -> AutoGlyphV {
+
+        let atlas_entry = atlas.get_entry(display, ag.glyph);
+        
         let mut special = 0;
         let mut special_data = [[0.; 4]; 4];
         let mut num_specials = 0;
@@ -121,7 +122,7 @@ impl AutoGlyphV {
             println!("More than 1 time varying not supported!");
         }
         AutoGlyphV {
-            index : ag.index,
+            index : atlas_entry.index,
             pos : ag.pos.data()[0],
             bg : ag.bg.data()[0],
             fg : ag.fg.data()[0],
