@@ -9,3 +9,11 @@ image = "*"
 font = { path = "./font" }
 fnv = "1"
 rand = "0.3"
+
+[[bin]]
+name = "rustgl"
+path = "src/main.rs"
+
+[[bin]]
+name = "trigger"
+path = "src/trigger.rs"

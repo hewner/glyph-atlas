@@ -1,9 +1,11 @@
+#![feature(rustc_private)]
 #[macro_use]
 extern crate glium;
 extern crate image;
 extern crate font;
 extern crate fnv;
 extern crate rand;
+extern crate rustc_serialize;
 
 use font::{Rasterize, FontDesc};
 use std::{time, env, thread};
@@ -77,8 +79,6 @@ fn generate_batch(num_rows: u32,
 
 fn main() {
 
-    //TODO: Allow character loads
-    
     use glium::{glutin, Surface};
 
     let window_width = 1900.;
@@ -156,8 +156,38 @@ fn main() {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let val = String::from("hi");
-        tx.send(val).unwrap();
+        use std::os::unix::net::UnixListener;
+        use std::io::Read;
+        use rustc_serialize::json;
+        
+        let listener = match UnixListener::bind("/tmp/sock2") {
+            Ok(sock) => sock,
+            Err(e) => {
+                println!("Couldn't connect: {:?}", e);
+                return
+            }
+        };
+
+        println!("listening");
+        for stream in listener.incoming() {
+            match stream {
+                Ok(mut stream) => {
+                    /* connection succeeded */
+                    let mut response = String::new();
+                    stream.read_to_string(&mut response).unwrap();
+                    let loaded: Vec<AutoGlyph> = json::decode(&response).unwrap();
+                    tx.send(loaded).unwrap();
+                }
+                Err(_) => {
+                    /* connection failed */
+                    break;
+                }
+            }
+        }
+
+        
+//        let val = generate_batch(num_rows, num_cols, 0.);
+
     });
 
 
@@ -187,6 +217,22 @@ fn main() {
         }
         target.finish().unwrap();
 
+        let thread_result = rx.try_recv();
+        match thread_result {
+            Ok(data) => {
+                let batch = GlyphBatch::new(&display,
+                                            &mut atlas,
+                                            &data);
+                batches.push(batch);
+            },
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                // no new data - do nothing
+            },
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("Disconnected from data thread"); //should be a panic someday
+            }
+        }
+        
         //println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
         //let ten_millis = time::Duration::from_millis(500);
         //thread::sleep(ten_millis);
