@@ -10,8 +10,12 @@ extern crate rustc_serialize;
 use font::{Rasterize, FontDesc};
 use std::{time, env, thread};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::sync::mpsc;
+
+use std::os::unix::net::{UnixListener, UnixStream};
+use rustc_serialize::json;
+
 
 mod auto_glyph;
 mod glyph_atlas;
@@ -156,9 +160,6 @@ fn main() {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        use std::os::unix::net::UnixListener;
-        use std::io::Read;
-        use rustc_serialize::json;
         
         let listener = match UnixListener::bind("/tmp/sock2") {
             Ok(sock) => sock,
@@ -247,14 +248,11 @@ fn main() {
                         match input.virtual_keycode {
                             Some(glutin::VirtualKeyCode::Escape) => closed = true,
                             Some(glutin::VirtualKeyCode::A) => {
-                                println!("YES!\n");
-                                let vertexes = generate_batch(num_rows,
-                                                              num_cols,
-                                                              t);
-                                let batch = GlyphBatch::new(&display,
-                                                            &mut atlas,
-                                                            &vertexes);
-                                batches.push(batch);
+                                
+                                let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
+                                let result = generate_batch(30,30,0.);
+                                let encoded = json::encode(&result).unwrap();
+                                stream.write_all(&encoded.into_bytes()).unwrap();
                                 },
                             _ => ()
                         }
@@ -265,5 +263,6 @@ fn main() {
             }
         });
     }
+    std::fs::remove_file("/tmp/sock2").unwrap();
 }
 
