@@ -1,18 +1,26 @@
+use std::time::{self, Duration, SystemTime};
+use std::ops::{Add, Sub};
 
-#[derive(RustcDecodable, RustcEncodable)]
+
+#[derive(Serialize, Deserialize)]
 pub struct AutoGlyph {
     pub(crate) glyph:char,
     pub(crate) pos: TimeVaryingVal,
-    pub(crate) start_t:f32,
-    pub(crate) end_t:f32,
+    pub(crate) start_t:SerializableTime,
+    pub(crate) end_t:SerializableTime,
     pub(crate) randomizations: TimeVaryingVal,
     pub(crate) fg : TimeVaryingVal,
     pub(crate) bg : TimeVaryingVal
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize)]
 pub struct TimeVaryingVal {
     pub(crate) data: [[f32; 4]; 4]
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub struct SerializableTime {
+    dur : Duration
 }
 
 enum VaryingType {
@@ -25,7 +33,12 @@ enum VaryingType {
 
 
 impl AutoGlyph {
-    pub fn new(glyph:char, pos:TimeVaryingVal, fg: TimeVaryingVal, bg: TimeVaryingVal, start_t:f32, end_t:f32) -> AutoGlyph {        
+    pub fn new(glyph:char,
+               pos:TimeVaryingVal,
+               fg: TimeVaryingVal,
+               bg: TimeVaryingVal,
+               start_t: SerializableTime,
+               end_t: SerializableTime) -> AutoGlyph {        
 
         AutoGlyph {
             glyph : glyph,
@@ -48,8 +61,8 @@ impl AutoGlyph {
         self.randomizations = value;
     }
 
-    pub fn end_t(&self) -> f32 {
-        self.end_t
+    pub fn end_t(&self) -> u64 {
+        self.end_t.dur.as_secs()
     }
 
 }
@@ -107,4 +120,34 @@ impl TimeVaryingVal {
             
     }    
 
+}
+
+impl SerializableTime {
+    pub fn now() -> SerializableTime {
+        let dur = SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap();
+        SerializableTime { dur : dur }
+    }
+
+    pub fn as_float(&self, offset:&Duration) -> f32 {
+        let delta = self.dur - *offset;
+        delta.as_secs() as f32 + delta.subsec_nanos() as f32 * 1e-9
+    }
+}
+
+impl Add<f32> for SerializableTime {
+    type Output = SerializableTime;
+
+    fn add(self, other: f32) -> SerializableTime {
+        let as_millis = (other*1000.) as u64;
+        SerializableTime { dur: self.dur + Duration::from_millis(as_millis) }
+    }
+}
+
+impl Sub<f32> for SerializableTime {
+    type Output = SerializableTime;
+
+    fn sub(self, other: f32) -> SerializableTime {
+        let as_millis = (other*1000.) as u64;
+        SerializableTime { dur: self.dur - Duration::from_millis(as_millis) }
+    }
 }

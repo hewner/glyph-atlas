@@ -6,6 +6,9 @@ authors = ["Michael Hewner <hewner@gmail.com>"]
 [dependencies]
 glium = "*"
 image = "*"
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
 font = { path = "./font" }
 fnv = "1"
 rand = "0.3"
@@ -14,6 +17,6 @@ rand = "0.3"
 name = "rustgl"
 path = "src/main.rs"
 
-[[bin]]
-name = "trigger"
-path = "src/trigger.rs"
+# [[bin]] comment just to make running easier
+# name = "trigger"
+# path = "src/trigger.rs"

@@ -5,7 +5,12 @@ extern crate image;
 extern crate font;
 extern crate fnv;
 extern crate rand;
-extern crate rustc_serialize;
+
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
 
 use font::{Rasterize, FontDesc};
 use std::{time, env, thread};
@@ -14,16 +19,17 @@ use std::io::{Read, Write};
 use std::sync::mpsc;
 
 use std::os::unix::net::{UnixListener, UnixStream};
-use rustc_serialize::json;
 
 
 mod auto_glyph;
 mod glyph_atlas;
 mod glyph_batch;
-    
+mod effects;
+
 use auto_glyph::*;
 use glyph_atlas::*;
 use glyph_batch::*;
+
 
 
 fn file_as_string(filename:&str)->String {
@@ -38,47 +44,6 @@ fn file_as_string(filename:&str)->String {
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
     contents
-}
-
-fn generate_batch(num_rows: u32,
-                  num_cols: u32,
-                  start_t: f32) -> Vec<AutoGlyph> {
-   let mut boxes = Vec::new();
-    //let mut rng = rand::thread_rng();
-    for r in 0..num_rows {
-        for c in 0..num_cols {
-            let letter = 'A' as u8 + ((c + r) % 58) as u8;
-            //atlas_entry = atlas.get_entry(display, letter as char);
-
-            let r_mod = rand::random::<f32>();
-            if r_mod > 0.1 { continue; } 
-         
-            let mut pos = TimeVaryingVal::new(r as f32,c as f32,0.,0.);
-            //pos.set_end(r as f32 + r_mod,c as f32 + c_mod,0.,0.);
-            //pos.set_chs_params(0.4,-0.2);
-            //pos.make_linear();
-
-            let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
-            //fg.set_end(0.,0.3,0.,1.0);
-            //fg.set_chs_params(0.4,-0.2);
-
-            let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
-            //bg.set_end(0.5,0.,0.5,1.0);
-            //bg.set_chs_params(0.4,-0.2);
-
-            let mut ag = AutoGlyph::new(letter as char,
-                                        pos,
-                                        fg,
-                                        bg,
-                                        start_t,
-                                        start_t + 10.);
-            ag.set_nonlinear_randomizations(45, 0.4, -0.2);
-            boxes.push(ag);
-         
-        }
-    }
-
-    boxes
 }
 
 fn main() {
@@ -153,7 +118,8 @@ fn main() {
         [-1.0 , 1.0, 0.0, 1.0f32],
     ];
 
-    let start = time::Instant::now();
+    let start = time::SystemTime::now();
+    let time_offset = start.duration_since(time::UNIX_EPOCH).unwrap();
     let mut batches:Vec<GlyphBatch> = Vec::new();
 
 
@@ -176,7 +142,7 @@ fn main() {
                     /* connection succeeded */
                     let mut response = String::new();
                     stream.read_to_string(&mut response).unwrap();
-                    let loaded: Vec<AutoGlyph> = json::decode(&response).unwrap();
+                    let loaded: Vec<AutoGlyph> = serde_json::from_str(&response).unwrap();
                     tx.send(loaded).unwrap();
                 }
                 Err(_) => {
@@ -194,8 +160,8 @@ fn main() {
 
     while !closed {
         let mut target = display.draw();
-        let now = time::Instant::now();
-        let dur = now - start;
+        let now = time::SystemTime::now();
+        let dur = now.duration_since(start).unwrap();
         let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
         {
             let uniforms = uniform! { t: t,
@@ -210,7 +176,8 @@ fn main() {
                 blend: glium::draw_parameters::Blend::alpha_blending(),
                 .. Default::default()
             };
-            batches.retain ( |ref b| b.latest_end() > t );
+            let now_secs = now.duration_since(time::UNIX_EPOCH).unwrap().as_secs();
+            batches.retain ( |ref b| b.latest_end() >= now_secs );
             for batch in &batches {
                 target.draw(batch.buffer(), &indices, &program, &uniforms,
                             &params).unwrap();
@@ -223,6 +190,7 @@ fn main() {
             Ok(data) => {
                 let batch = GlyphBatch::new(&display,
                                             &mut atlas,
+                                            &time_offset,
                                             &data);
                 batches.push(batch);
             },
@@ -250,8 +218,8 @@ fn main() {
                             Some(glutin::VirtualKeyCode::A) => {
                                 
                                 let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
-                                let result = generate_batch(30,30,0.);
-                                let encoded = json::encode(&result).unwrap();
+                                let result = effects::generate_batch(30,30,0.);
+                                let encoded = serde_json::to_string(&result).unwrap();
                                 stream.write_all(&encoded.into_bytes()).unwrap();
                                 },
                             _ => ()

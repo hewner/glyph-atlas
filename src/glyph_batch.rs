@@ -1,4 +1,5 @@
 use auto_glyph::{AutoGlyph};
+use std::time::Duration;
 use glyph_atlas::GlyphAtlas;
 use glium::backend::Facade;
 use glium::{self, VertexBuffer};
@@ -34,6 +35,7 @@ implement_vertex!(AutoGlyphV,
 impl AutoGlyphV {
     pub fn from_ag( display:&glium::backend::Facade,
                     atlas:&mut GlyphAtlas,
+                    time_offset:&Duration,
                     ag:&AutoGlyph) -> AutoGlyphV {
 
         let atlas_entry = atlas.get_entry(display, ag.glyph);
@@ -69,6 +71,7 @@ impl AutoGlyphV {
         if num_specials > 1 {
             println!("More than 1 time varying not supported!");
         }
+
         AutoGlyphV {
             index : atlas_entry.index,
             pos : ag.pos.data()[0],
@@ -76,8 +79,8 @@ impl AutoGlyphV {
             fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
             randomizations : ag.randomizations.data()[0][0] as u32,
-            start_t: ag.start_t,
-            end_t: ag.end_t,
+            start_t: ag.start_t.as_float(time_offset),
+            end_t: ag.end_t.as_float(time_offset),
             special : special,
             special_data: special_data,
         }
@@ -88,20 +91,21 @@ impl AutoGlyphV {
 
 pub struct GlyphBatch {
     buffer : VertexBuffer<AutoGlyphV>,
-    latest_end : f32
+    latest_end : u64
 }
 
 impl GlyphBatch {
 
     pub fn new(display:&Facade,
                atlas:&mut GlyphAtlas,
+               time_offset: &Duration,
                unconverted_glyphs:&[AutoGlyph]) -> GlyphBatch {
-        let mut latest_end:f32 = 0.;
+        let mut latest_end:u64 = 0;
         let glyphs:Vec<AutoGlyphV>;
         {
             let iter = unconverted_glyphs.iter().map(|g| {
                 if latest_end <  g.end_t() { latest_end = g.end_t() }
-                AutoGlyphV::from_ag(display, atlas, g)
+                AutoGlyphV::from_ag(display, atlas, time_offset, g)
             });
             glyphs = iter.collect();
         }
@@ -115,7 +119,7 @@ impl GlyphBatch {
         &self.buffer
     }
 
-    pub fn latest_end(&self) -> f32 {
+    pub fn latest_end(&self) -> u64 {
         self.latest_end
     }
     
