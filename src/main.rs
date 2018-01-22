@@ -160,6 +160,7 @@ fn main() {
 
     while !closed {
         let mut target = display.draw();
+
         let now = time::SystemTime::now();
         let dur = now.duration_since(start).unwrap();
         let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
@@ -171,7 +172,7 @@ fn main() {
                                       max_index : (atlas.size() - 1) as i32
             };
         
-            target.clear_color(0.0, 0.0, 1.0, 1.0);
+            target.clear_color(0.0, 0.0, 0.0, 1.0);
             let params = glium::DrawParameters {
                 blend: glium::draw_parameters::Blend::alpha_blending(),
                 .. Default::default()
