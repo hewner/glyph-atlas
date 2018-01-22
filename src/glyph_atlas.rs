@@ -137,7 +137,7 @@ impl GlyphAtlas {
     
 
             let index  = entry.attribute_index();
-            let mut temp_data = entry.attribute_array().to_vec();
+            let temp_data = entry.attribute_array().to_vec();
 
             self.attribute_textures.write(
                 glium::Rect {left: 0, bottom: index,
@@ -237,13 +237,13 @@ impl AtlasEntry {
         self.font_descent = font_descent;
 
 
-        let pixel_size = (self.tex_right() - self.tex_left()) * TEXTURE_SIZE as f32;
+        let pixel_size = (self.get_attribute(Right) - self.get_attribute(Left)) * TEXTURE_SIZE as f32;
         let width = pixel_size/self.font_width as f32;
 
         
         self.attributes[Width as usize] = width;
 
-        let pixel_size = (self.tex_top() - self.tex_bottom()) * TEXTURE_SIZE as f32;
+        let pixel_size = (self.get_attribute(Top) - self.get_attribute(Bottom)) * TEXTURE_SIZE as f32;
         let height = pixel_size/self.font_height as f32;
         self.attributes[Height as usize] = height;
         
@@ -260,37 +260,10 @@ impl AtlasEntry {
         self.index
     }
     
-    pub fn tex_left(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Left as usize]
+    fn get_attribute(&self, slot: self::AttributeSlots) -> f32 {
+        self.attributes[slot as usize]
     }
 
-    pub fn tex_right(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Right as usize]
-    }
-
-    pub fn tex_top(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Top as usize]
-    }
-
-    pub fn tex_bottom(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Bottom as usize]
-    }
-
-    pub fn width(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Width as usize]
-    }
-
-    pub fn height(&self) -> f32 {
-        self.attributes[self::AttributeSlots::Height as usize]
-    }
-
-    pub fn left(&self) -> f32 {
-        self.attributes[self::AttributeSlots::LeftOffset as usize]
-    }
-
-    pub fn top(&self) -> f32 {
-        self.attributes[self::AttributeSlots::TopOffset as usize]
-    }
 
     pub fn attribute_array(&self) -> &[f32;NUM_ATTRIBUTES] {
         &self.attributes

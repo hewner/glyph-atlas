@@ -76,10 +76,8 @@ fn main() {
     let num_cols = (window_width/char_width) as u32;
     let num_rows = (window_height/char_height) as u32;
 
-    let num_cells = num_rows*num_cols;    
-
-
-    let atlas_entry = atlas.get_entry(&display, 'Q');
+    //need to start with at least one entry in the atlas or you have problems
+    atlas.get_entry(&display, 'Q');
 /*    let mut pos = TimeVaryingVal::new(1.,1.,0.,0.);
     let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
     let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
