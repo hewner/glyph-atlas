@@ -74,6 +74,7 @@ vec4 interpolate(float progress, vec4 v1, vec4 v2) {
 void main()
 {
     if(t > data[0].end_t) return;
+    if(t < data[0].start_t) return;
     
     int index;
     if(data[0].randomizations == 0) {

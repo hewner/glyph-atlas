@@ -204,6 +204,13 @@ fn main() {
         //println!("{}", 1./(now.elapsed().subsec_nanos() as f64 * 1e-9));
         //let ten_millis = time::Duration::from_millis(500);
         //thread::sleep(ten_millis);
+
+        // we are cheating a bit by passing these along, but not much
+
+        let dc = effects::DrawContext { num_rows : num_rows,
+                                        num_cols : num_cols,
+                                        now : SerializableTime::now()
+        };
         events_loop.poll_events(|event| {
             match event {
                 glutin::Event::WindowEvent { event, .. } => match event {
@@ -212,16 +219,23 @@ fn main() {
                 },
                 glutin::Event::DeviceEvent { event, .. } => match event {
                     glutin::DeviceEvent::Key(input) => {
-                        match input.virtual_keycode {
-                            Some(glutin::VirtualKeyCode::Escape) => closed = true,
-                            Some(glutin::VirtualKeyCode::A) => {
-                                
-                                let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
-                                let result = effects::generate_batch(30,30,0.);
-                                let encoded = serde_json::to_string(&result).unwrap();
-                                stream.write_all(&encoded.into_bytes()).unwrap();
+                        if input.state == glutin::ElementState::Pressed {
+                            match input.virtual_keycode {
+                                Some(glutin::VirtualKeyCode::Escape) => closed = true,
+                                Some(glutin::VirtualKeyCode::A) => {
+                                    
+                                    //let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
+                                    let result = effects::generate_batch(&dc);
+                                    //let encoded = serde_json::to_string(&result).unwrap();
+                                    //stream.write_all(&encoded.into_bytes()).unwrap();
+                                    let batch = GlyphBatch::new(&display,
+                                                                &mut atlas,
+                                                                &time_offset,
+                                                                &result);
+                                    batches.push(batch);
                                 },
                             _ => ()
+                            }
                         }
                     },
                     _ => ()

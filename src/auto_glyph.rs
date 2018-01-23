@@ -138,8 +138,15 @@ impl Add<f32> for SerializableTime {
     type Output = SerializableTime;
 
     fn add(self, other: f32) -> SerializableTime {
-        let as_millis = (other*1000.) as u64;
-        SerializableTime { dur: self.dur + Duration::from_millis(as_millis) }
+
+        if other > 0. {
+            let as_millis = (other*1000.) as u64;
+            SerializableTime { dur: self.dur + Duration::from_millis(as_millis) }
+        } else {
+            let as_millis = (-other*1000.) as u64;
+            SerializableTime { dur: self.dur - Duration::from_millis(as_millis) }
+        }
+
     }
 }
 
@@ -147,7 +154,6 @@ impl Sub<f32> for SerializableTime {
     type Output = SerializableTime;
 
     fn sub(self, other: f32) -> SerializableTime {
-        let as_millis = (other*1000.) as u64;
-        SerializableTime { dur: self.dur - Duration::from_millis(as_millis) }
+        self.add(-other)
     }
 }
