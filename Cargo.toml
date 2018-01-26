@@ -8,7 +8,7 @@ glium = "*"
 image = "*"
 serde = "*"
 serde_derive = "*"
-serde_json = "*"
+bincode = "*"
 font = { path = "./font" }
 fnv = "1"
 rand = "0.3"

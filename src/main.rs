@@ -10,7 +10,7 @@ extern crate rand;
 extern crate serde_derive;
 
 extern crate serde;
-extern crate serde_json;
+extern crate bincode;
 
 use font::{Rasterize, FontDesc};
 use std::{time, env, thread};
@@ -139,8 +139,8 @@ fn main() {
                 Ok(mut stream) => {
                     /* connection succeeded */
                     let mut response = String::new();
-                    stream.read_to_string(&mut response).unwrap();
-                    let loaded: Vec<AutoGlyph> = serde_json::from_str(&response).unwrap();
+                    //stream.read_to_string(&mut response).unwrap();
+                    let loaded: Vec<AutoGlyph> = bincode::deserialize_from(&mut stream, bincode::Infinite).unwrap(); 
                     tx.send(loaded).unwrap();
                 }
                 Err(_) => {
@@ -155,7 +155,7 @@ fn main() {
 
     });
 
-
+    let mut parseTimer = time::Instant::now();
     while !closed {
         let mut target = display.draw();
 
@@ -185,6 +185,11 @@ fn main() {
         target.finish().unwrap();
 
         let thread_result = rx.try_recv();
+
+        //json parser was 1.0x seconds
+        //cbor parser was 1.3x seconds
+        //bincode parser was 0.5-0.6 seconds
+        
         match thread_result {
             Ok(data) => {
                 let batch = GlyphBatch::new(&display,
@@ -192,6 +197,10 @@ fn main() {
                                             &time_offset,
                                             &data);
                 batches.push(batch);
+                let dur = parseTimer.elapsed();
+                let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
+                println!("parse time passed {}", t);
+                //println!(" {:?}", parseTimer.elapsed()); 
             },
             Err(std::sync::mpsc::TryRecvError::Empty) => {
                 // no new data - do nothing
@@ -223,16 +232,20 @@ fn main() {
                             match input.virtual_keycode {
                                 Some(glutin::VirtualKeyCode::Escape) => closed = true,
                                 Some(glutin::VirtualKeyCode::A) => {
-                                    
-                                    //let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
+                                    parseTimer = time::Instant::now();
+                                    let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
                                     let result = effects::generate_batch(&dc);
-                                    //let encoded = serde_json::to_string(&result).unwrap();
+                                    //let encoded = serde_bytes::to_string(&result).unwrap();
                                     //stream.write_all(&encoded.into_bytes()).unwrap();
-                                    let batch = GlyphBatch::new(&display,
-                                                                &mut atlas,
-                                                                &time_offset,
-                                                                &result);
-                                    batches.push(batch);
+                                    bincode::serialize_into(&mut stream,
+                                                            &result,
+                                                            bincode::Infinite
+                                    ).unwrap();
+                                    //let batch = GlyphBatch::new(&display,
+                                    //                            &mut atlas,
+                                    //                            &time_offset,
+                                    //                            &result);
+                                    //batches.push(batch);
                                 },
                             _ => ()
                             }
