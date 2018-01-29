@@ -2,7 +2,6 @@ use std::time::{self, Duration, SystemTime};
 use std::ops::{Add, Sub};
 
 
-#[derive(Serialize, Deserialize)]
 pub struct AutoGlyph {
     pub(crate) glyph:char,
     pub(crate) pos: TimeVaryingVal,
@@ -13,12 +12,12 @@ pub struct AutoGlyph {
     pub(crate) bg : TimeVaryingVal
 }
 
-#[derive(Serialize, Deserialize)]
+
 pub struct TimeVaryingVal {
     pub(crate) data: [[f32; 4]; 4]
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct SerializableTime {
     dur : Duration
 }
@@ -63,6 +62,14 @@ impl AutoGlyph {
 
     pub fn end_t(&self) -> u64 {
         self.end_t.dur.as_secs()
+    }
+
+    pub fn r(&self) -> f32 {
+        self.pos.data()[0][0]
+    }
+
+    pub fn c(&self) -> f32 {
+        self.pos.data()[0][1]
     }
 
 }

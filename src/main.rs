@@ -7,10 +7,12 @@ extern crate fnv;
 extern crate rand;
 
 #[macro_use]
-extern crate serde_derive;
+extern crate nom;
 
-extern crate serde;
-extern crate bincode;
+extern crate byteorder;
+
+use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian};
+
 
 use font::{Rasterize, FontDesc};
 use std::{time, env, thread};
@@ -132,16 +134,34 @@ fn main() {
                 return
             }
         };
-
         println!("listening");
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
                     /* connection succeeded */
-                    let mut response = String::new();
-                    //stream.read_to_string(&mut response).unwrap();
-                    let loaded: Vec<AutoGlyph> = bincode::deserialize_from(&mut stream, bincode::Infinite).unwrap(); 
-                    tx.send(loaded).unwrap();
+                    let mut buffer = Vec::new();
+                    stream.read_to_end(&mut buffer).unwrap();
+
+                    //let size = stream.read_u32::<BigEndian>().unwrap();
+                    //let mut loaded: Vec<AutoGlyph> = Vec::with_capacity(size as usize);
+                    let dc = effects::DrawContext { num_rows : num_rows,
+                                                    num_cols : num_cols,
+                                                    now : SerializableTime::now()
+                    };
+
+                    use nom::{be_f32};
+                    
+                    named!(ag<AutoGlyph>,
+                           do_parse!(
+                               a:be_f32 >>
+                               b:be_f32 >>
+                               (effects::generate_cell2(a,b))
+                           ));
+
+                    named!(multi< Vec<AutoGlyph> >, many0!(ag));
+                    let qqq:Vec<AutoGlyph>;
+                    let (_, qqq) = multi(&buffer).unwrap();
+                    tx.send(qqq).unwrap();
                 }
                 Err(_) => {
                     /* connection failed */
@@ -189,9 +209,10 @@ fn main() {
         //json parser was 1.0x seconds
         //cbor parser was 1.3x seconds
         //bincode parser was 0.5-0.6 seconds
-        
+        //raw reads is .05-.06
         match thread_result {
             Ok(data) => {
+                //let dur = parseTimer.elapsed();
                 let batch = GlyphBatch::new(&display,
                                             &mut atlas,
                                             &time_offset,
@@ -207,6 +228,7 @@ fn main() {
             },
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 println!("Disconnected from data thread"); //should be a panic someday
+                std::process::exit(0);
             }
         }
         
@@ -237,10 +259,17 @@ fn main() {
                                     let result = effects::generate_batch(&dc);
                                     //let encoded = serde_bytes::to_string(&result).unwrap();
                                     //stream.write_all(&encoded.into_bytes()).unwrap();
-                                    bincode::serialize_into(&mut stream,
+                                    /* bincode::serialize_into(&mut stream,
                                                             &result,
                                                             bincode::Infinite
-                                    ).unwrap();
+                                ).unwrap();*/
+
+                                    //stream.write_u32::<BigEndian>(result.len() as u32);
+                                    for c in result {
+                                        stream.write_f32::<BigEndian>(c.r()).unwrap();
+                                        stream.write_f32::<BigEndian>(c.c()).unwrap();
+                                    }
+                                    
                                     //let batch = GlyphBatch::new(&display,
                                     //                            &mut atlas,
                                     //                            &time_offset,

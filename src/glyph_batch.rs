@@ -87,7 +87,7 @@ impl AutoGlyphV {
     }
 }
 
-
+ 
 
 pub struct GlyphBatch {
     buffer : VertexBuffer<AutoGlyphV>,

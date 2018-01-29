@@ -9,6 +9,8 @@ image = "*"
 serde = "*"
 serde_derive = "*"
 bincode = "*"
+nom = "^3.2"
+byteorder = "1"
 font = { path = "./font" }
 fnv = "1"
 rand = "0.3"
