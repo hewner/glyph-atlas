@@ -155,16 +155,24 @@ fn main() {
 
                     use nom::{be_f32};
                     
-                    named!(ag<AutoGlyph>,
+                    named!(ag<AutoGlyphV>,
                            do_parse!(
                                a:be_f32 >>
                                b:be_f32 >>
-                               (effects::generate_cell2(a,b))
+                               (AutoGlyphV::random(a,b))
                            ));
 
-                    named!(multi< Vec<AutoGlyph> >, many0!(ag));
-                    let qqq:Vec<AutoGlyph>;
+                    named!(multi< Vec<AutoGlyphV> >, many0!(ag));
+                    let qqq:Vec<AutoGlyphV>;
                     let (_, qqq) = multi(&buffer).unwrap();
+
+                    //let mut glyphs:Vec<AutoGlyphV>;
+                    //let iter = qqq.iter().map(|g| {
+                    //    AutoGlyphV::from_ag(g)
+                    //});
+                    //glyphs = iter.collect();
+
+                    
                     tx.send(qqq).unwrap();
                 }
                 Err(_) => {
@@ -215,7 +223,7 @@ fn main() {
                 //let dur = parseTimer.elapsed();
                 let batch = GlyphBatch::new(&display,
                                             &mut atlas,
-                                            &data);
+                                            data);
                 batches.push(batch);
             },
             Err(std::sync::mpsc::TryRecvError::Empty) => {

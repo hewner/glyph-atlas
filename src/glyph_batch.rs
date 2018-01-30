@@ -1,4 +1,4 @@
-use auto_glyph::{AutoGlyph};
+use auto_glyph::{self, AutoGlyph};
 use glyph_atlas::GlyphAtlas;
 use glium::backend::Facade;
 use glium::{self, VertexBuffer};
@@ -6,6 +6,7 @@ use rand;
 
 #[derive(Copy, Clone)]
 pub struct AutoGlyphV {
+    glyph : char,
     index : u32,
     randomizations : u32,
     seed: f32,
@@ -32,11 +33,25 @@ implement_vertex!(AutoGlyphV,
 
 
 impl AutoGlyphV {
-    pub fn from_ag( display:&glium::backend::Facade,
-                    atlas:&mut GlyphAtlas,
-                    ag:&AutoGlyph) -> AutoGlyphV {
 
-        let atlas_entry = atlas.get_entry(display, ag.glyph);
+    pub fn random(r:f32, c:f32) -> AutoGlyphV{
+        let now = auto_glyph::now_as_double();
+        AutoGlyphV {
+            glyph : '?',
+            index : 0,
+            pos : [r,c,0.,0.],
+            bg :  [0.,0.,0.,1.],
+            fg : [1.,1.,1.,1.],
+            seed : rand::random::<f32>(),
+            randomizations : 100,
+            start_t: now,
+            end_t: now + 3.,
+            special : 0,
+            special_data: [[0.; 4]; 4],
+        }
+    }
+    
+    pub fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
         
         let mut special = 0;
         let mut special_data = [[0.; 4]; 4];
@@ -71,7 +86,8 @@ impl AutoGlyphV {
         }
 
         AutoGlyphV {
-            index : atlas_entry.index,
+            glyph : ag.glyph,
+            index : 0,
             pos : ag.pos.data()[0],
             bg : ag.bg.data()[0],
             fg : ag.fg.data()[0],
@@ -82,6 +98,13 @@ impl AutoGlyphV {
             special : special,
             special_data: special_data,
         }
+    }
+
+    pub fn make_tranfer_ready(&mut self,
+                       display:&glium::backend::Facade,
+                       atlas:&mut GlyphAtlas) {
+        let atlas_entry = atlas.get_entry(display, self.glyph);
+        self.index = atlas_entry.index;
     }
 }
 
@@ -96,15 +119,11 @@ impl GlyphBatch {
 
     pub fn new(display:&Facade,
                atlas:&mut GlyphAtlas,
-               unconverted_glyphs:&[AutoGlyph]) -> GlyphBatch {
+               mut glyphs:Vec<AutoGlyphV>) -> GlyphBatch {
         let mut latest_end:f64 = 0.;
-        let glyphs:Vec<AutoGlyphV>;
-        {
-            let iter = unconverted_glyphs.iter().map(|g| {
+        for g in &mut glyphs {
                 if latest_end <  g.end_t { latest_end = g.end_t }
-                AutoGlyphV::from_ag(display, atlas, g)
-            });
-            glyphs = iter.collect();
+                g.make_tranfer_ready(display, atlas);
         }
         let buffer = VertexBuffer::new(display, &glyphs).unwrap();
         GlyphBatch { buffer : buffer,
