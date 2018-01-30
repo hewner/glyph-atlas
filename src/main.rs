@@ -11,13 +11,13 @@ extern crate nom;
 
 extern crate byteorder;
 
-use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian};
+use byteorder::{WriteBytesExt, BigEndian};
 
 
 use font::{Rasterize, FontDesc};
-use std::{time, env, thread};
+use std::{env, thread};
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::sync::mpsc;
 
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -100,11 +100,17 @@ fn main() {
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::Points);
 
 
+
+
+
+
     let program = glium::Program::from_source(&display,
                                               &file_as_string("shaders/vertex.glsl"),
                                               &file_as_string("shaders/fragment.glsl"),
                                               Some(&file_as_string("shaders/geometry.glsl"))).unwrap();
 
+
+    
 
     let mut closed = false;
 
@@ -118,8 +124,6 @@ fn main() {
         [-1.0 , 1.0, 0.0, 1.0f32],
     ];
 
-    let start = time::SystemTime::now();
-    let time_offset = start.duration_since(time::UNIX_EPOCH).unwrap();
     let mut batches:Vec<GlyphBatch> = Vec::new();
 
 
@@ -146,7 +150,7 @@ fn main() {
                     //let mut loaded: Vec<AutoGlyph> = Vec::with_capacity(size as usize);
                     let dc = effects::DrawContext { num_rows : num_rows,
                                                     num_cols : num_cols,
-                                                    now : SerializableTime::now()
+                                                    now : now_as_double()
                     };
 
                     use nom::{be_f32};
@@ -175,13 +179,10 @@ fn main() {
 
     });
 
-    let mut parseTimer = time::Instant::now();
     while !closed {
         let mut target = display.draw();
 
-        let now = time::SystemTime::now();
-        let dur = now.duration_since(start).unwrap();
-        let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
+        let t = now_as_double();
         {
             let uniforms = uniform! { t: t,
                                       matrix : matrix,
@@ -195,8 +196,7 @@ fn main() {
                 blend: glium::draw_parameters::Blend::alpha_blending(),
                 .. Default::default()
             };
-            let now_secs = now.duration_since(time::UNIX_EPOCH).unwrap().as_secs();
-            batches.retain ( |ref b| b.latest_end() >= now_secs );
+            batches.retain ( |ref b| b.latest_end() >= t );
             for batch in &batches {
                 target.draw(batch.buffer(), &indices, &program, &uniforms,
                             &params).unwrap();
@@ -215,13 +215,8 @@ fn main() {
                 //let dur = parseTimer.elapsed();
                 let batch = GlyphBatch::new(&display,
                                             &mut atlas,
-                                            &time_offset,
                                             &data);
                 batches.push(batch);
-                let dur = parseTimer.elapsed();
-                let t:f32 = dur.as_secs() as f32 + dur.subsec_nanos() as f32 * 1e-9;
-                println!("parse time passed {}", t);
-                //println!(" {:?}", parseTimer.elapsed()); 
             },
             Err(std::sync::mpsc::TryRecvError::Empty) => {
                 // no new data - do nothing
@@ -240,7 +235,7 @@ fn main() {
 
         let dc = effects::DrawContext { num_rows : num_rows,
                                         num_cols : num_cols,
-                                        now : SerializableTime::now()
+                                        now : now_as_double()
         };
         events_loop.poll_events(|event| {
             match event {
@@ -254,27 +249,13 @@ fn main() {
                             match input.virtual_keycode {
                                 Some(glutin::VirtualKeyCode::Escape) => closed = true,
                                 Some(glutin::VirtualKeyCode::A) => {
-                                    parseTimer = time::Instant::now();
                                     let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
                                     let result = effects::generate_batch(&dc);
-                                    //let encoded = serde_bytes::to_string(&result).unwrap();
-                                    //stream.write_all(&encoded.into_bytes()).unwrap();
-                                    /* bincode::serialize_into(&mut stream,
-                                                            &result,
-                                                            bincode::Infinite
-                                ).unwrap();*/
-
-                                    //stream.write_u32::<BigEndian>(result.len() as u32);
                                     for c in result {
                                         stream.write_f32::<BigEndian>(c.r()).unwrap();
                                         stream.write_f32::<BigEndian>(c.c()).unwrap();
                                     }
                                     
-                                    //let batch = GlyphBatch::new(&display,
-                                    //                            &mut atlas,
-                                    //                            &time_offset,
-                                    //                            &result);
-                                    //batches.push(batch);
                                 },
                             _ => ()
                             }

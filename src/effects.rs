@@ -1,10 +1,9 @@
 use auto_glyph::*;
-use rand;
 
 pub struct DrawContext {
     pub num_rows: u32,
     pub num_cols: u32,
-    pub now: SerializableTime,
+    pub now: f64,
 }
 
 pub fn generate_cell2(r:f32, c:f32) -> AutoGlyph {
@@ -22,12 +21,14 @@ pub fn generate_cell2(r:f32, c:f32) -> AutoGlyph {
     let mut fg = TimeVaryingVal::new(1.,1.,1.,1.0);
     let mut bg = TimeVaryingVal::new(0.,0.,0.,1.0);
 
+    let now = now_as_double();
+    
     let mut ag = AutoGlyph::new(letter as char,
                                 pos,
                                 fg,
                                 bg,
-                                SerializableTime::now() +  start_offset,
-                                SerializableTime::now() + 3. - end_offset);
+                                now,
+                                now + 3.);
     ag.set_nonlinear_randomizations(45, 0.4, -0.2);
     ag
 }

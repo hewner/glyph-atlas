@@ -1,8 +1,8 @@
-#version 330
+#version 410
 in vec4 pos;
 in float seed;
-in float start_t;
-in float end_t;
+in double start_t;
+in double end_t;
 in int index;
 in int randomizations;
 in vec4 fg;
@@ -18,8 +18,8 @@ out VertexData {
     flat int index;
     flat int special;
     flat int randomizations;
-    float start_t;
-    float end_t;
+    double start_t;
+    double end_t;
     vec4 pos;
     mat4 special_data;
 } geom;

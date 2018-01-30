@@ -1,5 +1,4 @@
 use auto_glyph::{AutoGlyph};
-use std::time::Duration;
 use glyph_atlas::GlyphAtlas;
 use glium::backend::Facade;
 use glium::{self, VertexBuffer};
@@ -11,8 +10,8 @@ pub struct AutoGlyphV {
     randomizations : u32,
     seed: f32,
     pos: [f32; 4],
-    start_t: f32,
-    end_t: f32,
+    start_t: f64,
+    end_t: f64,
     fg: [f32; 4],
     bg: [f32; 4],
     special: u32,
@@ -35,7 +34,6 @@ implement_vertex!(AutoGlyphV,
 impl AutoGlyphV {
     pub fn from_ag( display:&glium::backend::Facade,
                     atlas:&mut GlyphAtlas,
-                    time_offset:&Duration,
                     ag:&AutoGlyph) -> AutoGlyphV {
 
         let atlas_entry = atlas.get_entry(display, ag.glyph);
@@ -79,8 +77,8 @@ impl AutoGlyphV {
             fg : ag.fg.data()[0],
             seed : rand::random::<f32>(),
             randomizations : ag.randomizations.data()[0][0] as u32,
-            start_t: ag.start_t.as_float(time_offset),
-            end_t: ag.end_t.as_float(time_offset),
+            start_t: ag.start_t,
+            end_t: ag.end_t,
             special : special,
             special_data: special_data,
         }
@@ -91,21 +89,20 @@ impl AutoGlyphV {
 
 pub struct GlyphBatch {
     buffer : VertexBuffer<AutoGlyphV>,
-    latest_end : u64
+    latest_end : f64
 }
 
 impl GlyphBatch {
 
     pub fn new(display:&Facade,
                atlas:&mut GlyphAtlas,
-               time_offset: &Duration,
                unconverted_glyphs:&[AutoGlyph]) -> GlyphBatch {
-        let mut latest_end:u64 = 0;
+        let mut latest_end:f64 = 0.;
         let glyphs:Vec<AutoGlyphV>;
         {
             let iter = unconverted_glyphs.iter().map(|g| {
-                if latest_end <  g.end_t() { latest_end = g.end_t() }
-                AutoGlyphV::from_ag(display, atlas, time_offset, g)
+                if latest_end <  g.end_t { latest_end = g.end_t }
+                AutoGlyphV::from_ag(display, atlas, g)
             });
             glyphs = iter.collect();
         }
@@ -119,7 +116,7 @@ impl GlyphBatch {
         &self.buffer
     }
 
-    pub fn latest_end(&self) -> u64 {
+    pub fn latest_end(&self) -> f64 {
         self.latest_end
     }
     

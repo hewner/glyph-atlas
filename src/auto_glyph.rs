@@ -2,11 +2,19 @@ use std::time::{self, Duration, SystemTime};
 use std::ops::{Add, Sub};
 
 
+pub fn now_as_double() -> f64 {
+    let now = time::SystemTime::now();
+    let dur = now.duration_since(time::UNIX_EPOCH).unwrap();
+    dur.as_secs() as f64 + dur.subsec_nanos() as f64 * 1e-9
+}
+
+
+
 pub struct AutoGlyph {
     pub(crate) glyph:char,
     pub(crate) pos: TimeVaryingVal,
-    pub(crate) start_t:SerializableTime,
-    pub(crate) end_t:SerializableTime,
+    pub(crate) start_t:f64,
+    pub(crate) end_t:f64,
     pub(crate) randomizations: TimeVaryingVal,
     pub(crate) fg : TimeVaryingVal,
     pub(crate) bg : TimeVaryingVal
@@ -36,8 +44,8 @@ impl AutoGlyph {
                pos:TimeVaryingVal,
                fg: TimeVaryingVal,
                bg: TimeVaryingVal,
-               start_t: SerializableTime,
-               end_t: SerializableTime) -> AutoGlyph {        
+               start_t: f64,
+               end_t: f64) -> AutoGlyph {        
 
         AutoGlyph {
             glyph : glyph,
@@ -58,10 +66,6 @@ impl AutoGlyph {
         let mut value = TimeVaryingVal::new(num as f32,0.,0.,0.);
         value.set_chs_params(param1,param2);
         self.randomizations = value;
-    }
-
-    pub fn end_t(&self) -> u64 {
-        self.end_t.dur.as_secs()
     }
 
     pub fn r(&self) -> f32 {

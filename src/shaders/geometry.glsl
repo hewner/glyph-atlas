@@ -1,4 +1,4 @@
-#version 330
+#version 410
 layout(points) in;
 layout(triangle_strip, max_vertices=8) out;
 
@@ -9,8 +9,8 @@ in VertexData {
     flat int index;
     flat int special;
     flat int randomizations;
-    float start_t;
-    float end_t;
+    double start_t;
+    double end_t;
     vec4 pos;
     mat4 special_data;
 } data[];
@@ -20,7 +20,7 @@ out vec2 ftex_o2;
 out vec4 fg;
 flat out int fbg2;
 
-uniform float t;
+uniform double t;
 uniform int max_index;
 uniform mat4 matrix;
 uniform sampler2D attributes;
@@ -59,7 +59,7 @@ float rand(float fseed, float seed){
 
 float progress(mat4 params) {
     if(params[3][3] == NON_VARYING) return 0.;
-    float p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t); // percent of total time
+    float p = float((t - data[0].start_t)/(data[0].end_t - data[0].start_t)); // percent of total time
     // if(p > 1) return 1.;
     if(params[3][3] == LINEAR) return p;
     float p_2 = p*p;
@@ -85,7 +85,7 @@ void main()
         if(data[0].special == RANDOM_VARYING) {
             p = progress(data[0].special_data);
         } else {
-            p = (t - data[0].start_t)/(data[0].end_t - data[0].start_t);
+            p = float((t - data[0].start_t)/(data[0].end_t - data[0].start_t));
             // if(p > 1) p = 1;
         }
         float timeslot = floor(p*data[0].randomizations + data[0].seed);
