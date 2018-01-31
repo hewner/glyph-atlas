@@ -34,23 +34,37 @@ implement_vertex!(AutoGlyphV,
 
 impl AutoGlyphV {
 
-    pub fn random(r:f32, c:f32) -> AutoGlyphV{
+    pub fn basic(r:f32,
+                 c:f32,
+                 st:f64,
+                 et:f64,
+                 fg:[f32; 4],
+                 bg:[f32; 4],
+                 randomizations: u32
+    ) -> AutoGlyphV{
         let now = auto_glyph::now_as_double();
         AutoGlyphV {
             glyph : '?',
             index : 0,
             pos : [r,c,0.,0.],
-            bg :  [0.,0.,0.,1.],
-            fg : [1.,1.,1.,1.],
+            bg :  bg,
+            fg : fg,
             seed : rand::random::<f32>(),
-            randomizations : 100,
-            start_t: now,
-            end_t: now + 3.,
+            randomizations : randomizations,
+            start_t: st,
+            end_t: et,
             special : 0,
             special_data: [[0.; 4]; 4],
         }
     }
-    
+
+    pub fn set_special(&mut self,
+                       special: u32,
+                       special_data: [[f32; 4]; 4]) {
+        self.special = special;
+        self.special_data = special_data;
+    }
+
     pub fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
         
         let mut special = 0;

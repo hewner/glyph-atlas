@@ -17,7 +17,7 @@ use byteorder::{WriteBytesExt, BigEndian};
 use font::{Rasterize, FontDesc};
 use std::{env, thread};
 use std::fs::File;
-use std::io::{Read};
+use std::io::{Write, Read};
 use std::sync::mpsc;
 
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -153,15 +153,66 @@ fn main() {
                                                     now : now_as_double()
                     };
 
-                    use nom::{be_f32};
-                    
-                    named!(ag<AutoGlyphV>,
+                    use nom::{be_f32, be_f64, be_u32};
+
+                    named!(color<[f32; 4]>,
                            do_parse!(
-                               a:be_f32 >>
-                               b:be_f32 >>
-                               (AutoGlyphV::random(a,b))
+                               r:be_f32 >>
+                               g:be_f32 >>
+                               b:be_f32 >>    
+                               ([r,g,b,1.])
                            ));
 
+
+                    named!(varying<TimeVaryingVal>,
+                           do_parse!(
+                               s1:be_f32 >>
+                                   s2:be_f32 >>
+                                   s3:be_f32 >>
+                                   e1:be_f32 >>
+                                   e2:be_f32 >>
+                                   e3:be_f32 >>
+                                   ({let mut val = TimeVaryingVal::new(s1,s2,s3,0.);
+                                     val.set_end(e1,e2,e3,0.);
+                                     val})
+                           ));
+                    
+                    named!(lr<AutoGlyphV>,
+                           do_parse!(
+                               tag!("lr") >>
+                                   r:be_f32 >>
+                                   c:be_f32 >>
+                                   st:be_f64 >>
+                                   et:be_f64 >>
+                                   fg:color >>
+                                   bg:color >>
+                                   rnum:be_u32 >>
+                                   (AutoGlyphV::basic(r,c,st,et,fg,bg,rnum))
+                           ));
+
+
+                    named!(bg<AutoGlyphV>,
+                           do_parse!(
+                               tag!("bg") >>
+                                   r:be_f32 >>
+                                   c:be_f32 >>
+                                   st:be_f64 >>
+                                   et:be_f64 >>
+                                   fg:color >>
+                                   vary_val:varying >>
+                                   ({let mut g = AutoGlyphV::basic(r,c,st,et,fg,[0.,0.,0.,0.],0);
+                                     g.set_special(1,vary_val.data());
+                                     g
+                                   })
+                           ));
+
+
+                    named!(ag<AutoGlyphV>,
+                           alt!(
+                               lr | bg
+                           ));
+
+                    
                     named!(multi< Vec<AutoGlyphV> >, many0!(ag));
                     let qqq:Vec<AutoGlyphV>;
                     let (_, qqq) = multi(&buffer).unwrap();
@@ -260,8 +311,29 @@ fn main() {
                                     let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
                                     let result = effects::generate_batch(&dc);
                                     for c in result {
+                                        stream.write(b"bg").unwrap();
                                         stream.write_f32::<BigEndian>(c.r()).unwrap();
                                         stream.write_f32::<BigEndian>(c.c()).unwrap();
+                                        stream.write_f64::<BigEndian>(dc.now).unwrap();
+                                        stream.write_f64::<BigEndian>(dc.now + 2.).unwrap();
+                                        stream.write_f32::<BigEndian>(1.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+
+                                        /*
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(1.).unwrap();
+
+                                        stream.write_u32::<BigEndian>(3).unwrap();
+                                         */
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(1.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                        stream.write_f32::<BigEndian>(1.).unwrap();
+                                        stream.write_f32::<BigEndian>(0.).unwrap();
+
                                     }
                                     
                                 },

@@ -127,6 +127,7 @@ impl TimeVaryingVal {
     }
 
     pub(crate) fn data(&self) -> [[f32; 4]; 4] {
+        // TODO: this should consume the object
         self.data.clone()
             
     }    
