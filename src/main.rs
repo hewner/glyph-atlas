@@ -11,13 +11,10 @@ extern crate nom;
 
 extern crate byteorder;
 
-use byteorder::{WriteBytesExt, BigEndian};
-
-
 use font::{Rasterize, FontDesc};
 use std::{env, thread};
 use std::fs::File;
-use std::io::{Write, Read};
+use std::io::{Read};
 use std::sync::mpsc;
 
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -26,12 +23,13 @@ use std::os::unix::net::{UnixListener, UnixStream};
 mod auto_glyph;
 mod glyph_atlas;
 mod glyph_batch;
+mod glyph_builder;
 mod effects;
 
 use auto_glyph::*;
 use glyph_atlas::*;
 use glyph_batch::*;
-
+use glyph_builder::GlyphBuilder;
 
 
 fn file_as_string(filename:&str)->String {
@@ -153,7 +151,7 @@ fn main() {
                                                     now : now_as_double()
                     };
 
-                    use nom::{be_f32, be_f64, be_u32};
+                    use nom::{be_f32, be_f64, be_u32, anychar};
 
                     named!(color<[f32; 4]>,
                            do_parse!(
@@ -176,6 +174,21 @@ fn main() {
                                      val.set_end(e1,e2,e3,0.);
                                      val})
                            ));
+
+                    named!(b<AutoGlyphV>,
+                           do_parse!(
+                               tag!("ba") >>
+                                   glyph:be_u32 >>
+                                   r:be_f32 >>
+                                   c:be_f32 >>
+                                   st:be_f64 >>
+                                   et:be_f64 >>
+                                   fg:color >>
+                                   bg:color >>
+                                   ({let converted = std::char::from_u32(glyph).unwrap();
+                                     AutoGlyphV::basic(converted,r,c,st,et,fg,bg,0)})
+                           ));
+
                     
                     named!(lr<AutoGlyphV>,
                            do_parse!(
@@ -187,20 +200,22 @@ fn main() {
                                    fg:color >>
                                    bg:color >>
                                    rnum:be_u32 >>
-                                   (AutoGlyphV::basic(r,c,st,et,fg,bg,rnum))
+                                   (AutoGlyphV::basic('?',r,c,st,et,fg,bg,rnum))
                            ));
 
 
                     named!(bg<AutoGlyphV>,
                            do_parse!(
                                tag!("bg") >>
+                                   glyph:be_u32 >>
                                    r:be_f32 >>
                                    c:be_f32 >>
                                    st:be_f64 >>
                                    et:be_f64 >>
                                    fg:color >>
                                    vary_val:varying >>
-                                   ({let mut g = AutoGlyphV::basic(r,c,st,et,fg,[0.,0.,0.,0.],0);
+                                   ({  let converted = std::char::from_u32(glyph).unwrap();
+                                       let mut g = AutoGlyphV::basic(converted,r,c,st,et,fg,[0.,0.,0.,0.],0);
                                      g.set_special(1,vary_val.data());
                                      g
                                    })
@@ -209,7 +224,7 @@ fn main() {
 
                     named!(ag<AutoGlyphV>,
                            alt!(
-                               lr | bg
+                               b | lr | bg
                            ));
 
                     
@@ -309,31 +324,35 @@ fn main() {
                                 Some(glutin::VirtualKeyCode::Escape) => closed = true,
                                 Some(glutin::VirtualKeyCode::A) => {
                                     let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
-                                    let result = effects::generate_batch(&dc);
-                                    for c in result {
-                                        stream.write(b"bg").unwrap();
-                                        stream.write_f32::<BigEndian>(c.r()).unwrap();
-                                        stream.write_f32::<BigEndian>(c.c()).unwrap();
-                                        stream.write_f64::<BigEndian>(dc.now).unwrap();
-                                        stream.write_f64::<BigEndian>(dc.now + 2.).unwrap();
-                                        stream.write_f32::<BigEndian>(1.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                    let mut glyph = GlyphBuilder::new()
+                                        .fg(0.,0.,0.)
+                                        .bg(0.,1.,0.)
+                                        .glyph('❤');
 
-                                        /*
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(1.).unwrap();
+                                    let mut fade = GlyphBuilder::new()
+                                        .fg(0.,0.,0.)
+                                        .glyph('-');
 
-                                        stream.write_u32::<BigEndian>(3).unwrap();
-                                         */
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(1.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
-                                        stream.write_f32::<BigEndian>(1.).unwrap();
-                                        stream.write_f32::<BigEndian>(0.).unwrap();
+                                    
+                                    for c in 0..dc.num_cols {
+                                        let step = 0.01;
+                                        let move_on = dc.now + c as f64*step;
+                                        let move_off = move_on + step;
+                                        let fade_out = move_off + 30.*step;
+                                        glyph = glyph
+                                            .pos(0., c as f32)
+                                            .start(move_on)
+                                            .end(move_off);        
+                                        glyph.send_basic(&mut stream);
 
+                                        fade = fade
+                                            .pos(0., c as f32)
+                                            .start(move_off)
+                                            .end(fade_out);
+
+                                        fade.send_linear_bg([0.,0.3,0.],
+                                                             [0.,0.,0.],
+                                                             &mut stream);
                                     }
                                     
                                 },

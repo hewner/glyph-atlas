@@ -34,7 +34,8 @@ implement_vertex!(AutoGlyphV,
 
 impl AutoGlyphV {
 
-    pub fn basic(r:f32,
+    pub fn basic(g: char,
+                 r:f32,
                  c:f32,
                  st:f64,
                  et:f64,
@@ -44,7 +45,7 @@ impl AutoGlyphV {
     ) -> AutoGlyphV{
         let now = auto_glyph::now_as_double();
         AutoGlyphV {
-            glyph : '?',
+            glyph : g,
             index : 0,
             pos : [r,c,0.,0.],
             bg :  bg,
