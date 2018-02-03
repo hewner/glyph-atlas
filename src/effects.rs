@@ -1,4 +1,3 @@
-use auto_glyph::*;
 
 pub struct DrawContext {
     pub num_rows: u32,

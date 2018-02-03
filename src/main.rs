@@ -142,16 +142,10 @@ fn main() {
                 Ok(mut stream) => {
                     /* connection succeeded */
                     let mut buffer = Vec::new();
-                    stream.read_to_end(&mut buffer).unwrap();
+                    //TODO: process like a stream
+                    stream.read_to_end(&mut buffer).unwrap(); 
 
-                    //let size = stream.read_u32::<BigEndian>().unwrap();
-                    //let mut loaded: Vec<AutoGlyph> = Vec::with_capacity(size as usize);
-                    let dc = effects::DrawContext { num_rows : num_rows,
-                                                    num_cols : num_cols,
-                                                    now : now_as_double()
-                    };
-
-                    use nom::{be_f32, be_f64, be_u32, anychar};
+                    use nom::{be_f32, be_f64, be_u32};
 
                     named!(color<[f32; 4]>,
                            do_parse!(
@@ -229,17 +223,9 @@ fn main() {
 
                     
                     named!(multi< Vec<AutoGlyphV> >, many0!(ag));
-                    let qqq:Vec<AutoGlyphV>;
-                    let (_, qqq) = multi(&buffer).unwrap();
+                    let (_, glyphs) = multi(&buffer).unwrap();
 
-                    //let mut glyphs:Vec<AutoGlyphV>;
-                    //let iter = qqq.iter().map(|g| {
-                    //    AutoGlyphV::from_ag(g)
-                    //});
-                    //glyphs = iter.collect();
-
-                    
-                    tx.send(qqq).unwrap();
+                    tx.send(glyphs).unwrap();
                 }
                 Err(_) => {
                     /* connection failed */

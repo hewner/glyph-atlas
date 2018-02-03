@@ -1,4 +1,3 @@
-use auto_glyph::{self, AutoGlyph};
 use glyph_atlas::GlyphAtlas;
 use glium::backend::Facade;
 use glium::{self, VertexBuffer};
@@ -43,7 +42,7 @@ impl AutoGlyphV {
                  bg:[f32; 4],
                  randomizations: u32
     ) -> AutoGlyphV{
-        let now = auto_glyph::now_as_double();
+        
         AutoGlyphV {
             glyph : g,
             index : 0,
@@ -64,55 +63,6 @@ impl AutoGlyphV {
                        special_data: [[f32; 4]; 4]) {
         self.special = special;
         self.special_data = special_data;
-    }
-
-    pub fn from_ag(ag:&AutoGlyph) -> AutoGlyphV {
-        
-        let mut special = 0;
-        let mut special_data = [[0.; 4]; 4];
-        let mut num_specials = 0;
-
-        if ag.randomizations.is_variable() {
-            special = 4;
-            special_data = ag.randomizations.data();
-            num_specials += 1;
-        }
-        
-        if ag.pos.is_variable() {
-            special = 3;
-            special_data = ag.pos.data();
-            num_specials += 1;
-        }
-
-        if ag.fg.is_variable() {
-            special = 2;
-            special_data = ag.fg.data();
-            num_specials += 1;
-        }
-
-        if ag.bg.is_variable() {
-            special = 1;
-            special_data = ag.bg.data();
-            num_specials += 1;
-        }
-
-        if num_specials > 1 {
-            println!("More than 1 time varying not supported!");
-        }
-
-        AutoGlyphV {
-            glyph : ag.glyph,
-            index : 0,
-            pos : ag.pos.data()[0],
-            bg : ag.bg.data()[0],
-            fg : ag.fg.data()[0],
-            seed : rand::random::<f32>(),
-            randomizations : ag.randomizations.data()[0][0] as u32,
-            start_t: ag.start_t,
-            end_t: ag.end_t,
-            special : special,
-            special_data: special_data,
-        }
     }
 
     pub fn make_tranfer_ready(&mut self,
