@@ -116,6 +116,7 @@ void main()
     } else {
         fg = data[0].bg;
     }
+    if(width == 0) width = 1; //space has zero width
     float bgwidth = ceil(width);
     float bgheight = 1;
     gl_Position = matrix * vec4(start_c, start_r, 0.0, 1.);

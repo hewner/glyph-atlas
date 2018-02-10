@@ -3,7 +3,7 @@ use glium::backend::Facade;
 use glium::{self, VertexBuffer};
 use rand;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct AutoGlyphV {
     glyph : char,
     index : u32,
@@ -73,31 +73,69 @@ impl AutoGlyphV {
     }
 }
 
- 
 
-pub struct GlyphBatch {
-    buffer : VertexBuffer<AutoGlyphV>,
-    latest_end : f64
+pub struct PreInstallGlyphBatch {
+    glyphs : Vec<AutoGlyphV>,
+    name : Option<String>
 }
 
-impl GlyphBatch {
+impl PreInstallGlyphBatch {
+    pub fn new(name: Option<String>,
+               glyphs: Vec<AutoGlyphV>) -> PreInstallGlyphBatch {
+        PreInstallGlyphBatch  {
+            glyphs : glyphs,
+            name : name,
+        }
+    
+    }
 
-    pub fn new(display:&Facade,
-               atlas:&mut GlyphAtlas,
-               mut glyphs:Vec<AutoGlyphV>) -> GlyphBatch {
+    pub fn install(self, display:&Facade, atlas:&mut GlyphAtlas)
+                   -> InstalledGlyphBatch {
+        InstalledGlyphBatch::new(display,
+                                 atlas,
+                                 self.name,
+                                 self.glyphs)
+    }
+}
+
+pub struct InstalledGlyphBatch {
+    buffer : VertexBuffer<AutoGlyphV>,
+    latest_end : f64,
+    name : Option<String>
+}
+
+impl InstalledGlyphBatch {
+
+    fn new(display:&Facade,
+           atlas:&mut GlyphAtlas,
+           name:Option<String>,
+           mut glyphs:Vec<AutoGlyphV>) -> InstalledGlyphBatch {
         let mut latest_end:f64 = 0.;
         for g in &mut glyphs {
                 if latest_end <  g.end_t { latest_end = g.end_t }
                 g.make_tranfer_ready(display, atlas);
         }
         let buffer = VertexBuffer::new(display, &glyphs).unwrap();
-        GlyphBatch { buffer : buffer,
-                     latest_end : latest_end
+        InstalledGlyphBatch { buffer : buffer,
+                              name : name,
+                              latest_end : latest_end
         }
     }
 
     pub fn buffer(&self) -> &VertexBuffer<AutoGlyphV> {
         &self.buffer
+    }
+
+    pub fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
+
+
+    pub fn name_matches(&self, other_name:&String) -> bool {
+        match self.name {
+            None => false,
+            Some(ref name_string) => name_string == other_name
+        }
     }
 
     pub fn latest_end(&self) -> f64 {

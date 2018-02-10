@@ -17,19 +17,19 @@ use std::fs::File;
 use std::io::{Read};
 use std::sync::mpsc;
 
-use std::os::unix::net::{UnixListener, UnixStream};
+use std::os::unix::net::{UnixListener};
 
 
 mod auto_glyph;
 mod glyph_atlas;
 mod glyph_batch;
-mod glyph_builder;
+mod glyph_sender;
+mod glyph_receiver;
 mod effects;
 
-use auto_glyph::*;
 use glyph_atlas::*;
 use glyph_batch::*;
-use glyph_builder::GlyphBuilder;
+use glyph_sender::GlyphSender;
 
 
 fn file_as_string(filename:&str)->String {
@@ -122,7 +122,7 @@ fn main() {
         [-1.0 , 1.0, 0.0, 1.0f32],
     ];
 
-    let mut batches:Vec<GlyphBatch> = Vec::new();
+    let mut batches:Vec<InstalledGlyphBatch> = Vec::new();
 
 
     let (tx, rx) = mpsc::channel();
@@ -140,91 +140,7 @@ fn main() {
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
-                    /* connection succeeded */
-                    let mut buffer = Vec::new();
-                    //TODO: process like a stream
-                    stream.read_to_end(&mut buffer).unwrap(); 
-
-                    use nom::{be_f32, be_f64, be_u32};
-
-                    named!(color<[f32; 4]>,
-                           do_parse!(
-                               r:be_f32 >>
-                               g:be_f32 >>
-                               b:be_f32 >>    
-                               ([r,g,b,1.])
-                           ));
-
-
-                    named!(varying<TimeVaryingVal>,
-                           do_parse!(
-                               s1:be_f32 >>
-                                   s2:be_f32 >>
-                                   s3:be_f32 >>
-                                   e1:be_f32 >>
-                                   e2:be_f32 >>
-                                   e3:be_f32 >>
-                                   ({let mut val = TimeVaryingVal::new(s1,s2,s3,0.);
-                                     val.set_end(e1,e2,e3,0.);
-                                     val})
-                           ));
-
-                    named!(b<AutoGlyphV>,
-                           do_parse!(
-                               tag!("ba") >>
-                                   glyph:be_u32 >>
-                                   r:be_f32 >>
-                                   c:be_f32 >>
-                                   st:be_f64 >>
-                                   et:be_f64 >>
-                                   fg:color >>
-                                   bg:color >>
-                                   ({let converted = std::char::from_u32(glyph).unwrap();
-                                     AutoGlyphV::basic(converted,r,c,st,et,fg,bg,0)})
-                           ));
-
-                    
-                    named!(lr<AutoGlyphV>,
-                           do_parse!(
-                               tag!("lr") >>
-                                   r:be_f32 >>
-                                   c:be_f32 >>
-                                   st:be_f64 >>
-                                   et:be_f64 >>
-                                   fg:color >>
-                                   bg:color >>
-                                   rnum:be_u32 >>
-                                   (AutoGlyphV::basic('?',r,c,st,et,fg,bg,rnum))
-                           ));
-
-
-                    named!(bg<AutoGlyphV>,
-                           do_parse!(
-                               tag!("bg") >>
-                                   glyph:be_u32 >>
-                                   r:be_f32 >>
-                                   c:be_f32 >>
-                                   st:be_f64 >>
-                                   et:be_f64 >>
-                                   fg:color >>
-                                   vary_val:varying >>
-                                   ({  let converted = std::char::from_u32(glyph).unwrap();
-                                       let mut g = AutoGlyphV::basic(converted,r,c,st,et,fg,[0.,0.,0.,0.],0);
-                                     g.set_special(1,vary_val.data());
-                                     g
-                                   })
-                           ));
-
-
-                    named!(ag<AutoGlyphV>,
-                           alt!(
-                               b | lr | bg
-                           ));
-
-                    
-                    named!(multi< Vec<AutoGlyphV> >, many0!(ag));
-                    let (_, glyphs) = multi(&buffer).unwrap();
-
+                    let glyphs = glyph_receiver::receive_glyphs(stream);
                     tx.send(glyphs).unwrap();
                 }
                 Err(_) => {
@@ -242,7 +158,7 @@ fn main() {
     while !closed {
         let mut target = display.draw();
 
-        let t = now_as_double();
+        let t = glyph_sender::now_as_double();
         {
             let uniforms = uniform! { t: t,
                                       matrix : matrix,
@@ -271,11 +187,16 @@ fn main() {
         //bincode parser was 0.5-0.6 seconds
         //raw reads is .05-.06
         match thread_result {
-            Ok(data) => {
-                //let dur = parseTimer.elapsed();
-                let batch = GlyphBatch::new(&display,
-                                            &mut atlas,
-                                            data);
+            Ok(pre_install) => {
+                let batch = pre_install.install(&display,&mut atlas);
+                if let Some(name) = batch.name() {
+                    for i in 0..batches.len() {
+                        if batches[i].name_matches(&name) {
+                            batches.remove(i);
+                            break;
+                        }
+                    }
+                }
                 batches.push(batch);
             },
             Err(std::sync::mpsc::TryRecvError::Empty) => {
@@ -295,7 +216,7 @@ fn main() {
 
         let dc = effects::DrawContext { num_rows : num_rows,
                                         num_cols : num_cols,
-                                        now : now_as_double()
+                                        now : glyph_sender::now_as_double()
         };
         events_loop.poll_events(|event| {
             match event {
@@ -309,15 +230,15 @@ fn main() {
                             match input.virtual_keycode {
                                 Some(glutin::VirtualKeyCode::Escape) => closed = true,
                                 Some(glutin::VirtualKeyCode::A) => {
-                                    let mut stream = UnixStream::connect("/tmp/sock2").unwrap();
-                                    let mut glyph = GlyphBuilder::new()
+                                    let mut stream = glyph_sender::start_batch().unwrap();
+                                    let mut glyph = GlyphSender::new()
                                         .fg(0.,0.,0.)
                                         .bg(0.,1.,0.)
                                         .glyph('❤');
 
-                                    let mut fade = GlyphBuilder::new()
+                                    let mut fade = GlyphSender::new()
                                         .fg(0.,0.,0.)
-                                        .glyph('-');
+                                        .glyph(' ');
 
                                     
                                     for c in 0..dc.num_cols {
@@ -329,7 +250,7 @@ fn main() {
                                             .pos(0., c as f32)
                                             .start(move_on)
                                             .end(move_off);        
-                                        glyph.send_basic(&mut stream);
+                                        glyph.send_basic(&mut stream).unwrap();
 
                                         fade = fade
                                             .pos(0., c as f32)
@@ -337,8 +258,8 @@ fn main() {
                                             .end(fade_out);
 
                                         fade.send_linear_bg([0.,0.3,0.],
-                                                             [0.,0.,0.],
-                                                             &mut stream);
+                                                             [0.3,0.,0.],
+                                                             &mut stream).unwrap();
                                     }
                                     
                                 },

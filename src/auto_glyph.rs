@@ -1,11 +1,3 @@
-use std::time;
-
-
-pub fn now_as_double() -> f64 {
-    let now = time::SystemTime::now();
-    let dur = now.duration_since(time::UNIX_EPOCH).unwrap();
-    dur.as_secs() as f64 + dur.subsec_nanos() as f64 * 1e-9
-}
 
 pub struct TimeVaryingVal {
     pub(crate) data: [[f32; 4]; 4]

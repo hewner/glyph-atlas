@@ -137,6 +137,7 @@ impl GlyphAtlas {
     
 
             let index  = entry.attribute_index();
+            println!("new entry '{}': {:?}", &c, &entry);
             let temp_data = entry.attribute_array().to_vec();
 
             self.attribute_textures.write(
@@ -164,7 +165,7 @@ impl GlyphAtlas {
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AtlasEntry {
     pub page:u32,
     left:u32,
