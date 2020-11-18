@@ -62,10 +62,10 @@ fn main() {
     //    let foo_tex = glium::texture::RgbTexture2d::new(&display, foo).unwrap();
 
     
-    let mut events_loop = glutin::EventsLoop::new();
-    let window = glutin::WindowBuilder::new()
-        .with_title("Hello world!")
-        .with_dimensions(window_width as u32, window_height as u32);
+    let mut events_loop = glutin::event_loop::EventLoop::new();
+    let window = glutin::window::WindowBuilder::new()
+        .with_title("Hello world!");
+//        .with_inner_size(window_width as u32, window_height as u32);
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
@@ -218,18 +218,19 @@ fn main() {
                                         num_cols : num_cols,
                                         now : glyph_sender::now_as_double()
         };
-        events_loop.poll_events(|event| {
+        events_loop.run(move |event, _, _| {
             match event {
-                glutin::Event::WindowEvent { event, .. } => match event {
-                    glutin::WindowEvent::Closed => closed = true,
-                    _ => ()
+                glutin::event::Event::WindowEvent { event, .. } => match event {
+                    glutin::event::WindowEvent::CloseRequested =>
+                        closed = true,
+                        _ => ()
                 },
-                glutin::Event::DeviceEvent { event, .. } => match event {
-                    glutin::DeviceEvent::Key(input) => {
-                        if input.state == glutin::ElementState::Pressed {
+                glutin::event::Event::DeviceEvent { event, .. } => match event {
+                    glutin::event::DeviceEvent::Key(input) => {
+                        if input.state == glutin::event::ElementState::Pressed {
                             match input.virtual_keycode {
-                                Some(glutin::VirtualKeyCode::Escape) => closed = true,
-                                Some(glutin::VirtualKeyCode::A) => {
+                                Some(glutin::event::VirtualKeyCode::Escape) => closed = true,
+                                Some(glutin::event::VirtualKeyCode::A) => {
                                     let mut stream = glyph_sender::start_batch().unwrap();
                                     let mut glyph = GlyphSender::new()
                                         .fg(0.,0.,0.)
