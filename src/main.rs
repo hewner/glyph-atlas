@@ -160,6 +160,7 @@ fn main() {
 
         let t = glyph_sender::now_as_double();
         {
+            println!("drawing");
             let uniforms = uniform! { t: t,
                                       matrix : matrix,
                                       tex : atlas.texture(),
@@ -167,7 +168,7 @@ fn main() {
                                       max_index : (atlas.size() - 1) as i32
             };
         
-            target.clear_color(0.0, 0.0, 0.0, 1.0);
+            target.clear_color(0.5, 0.0, 0.0, 1.0);
             let params = glium::DrawParameters {
                 blend: glium::draw_parameters::Blend::alpha_blending(),
                 .. Default::default()
@@ -214,23 +215,31 @@ fn main() {
 
         // we are cheating a bit by passing these along, but not much
 
-        let dc = effects::DrawContext { num_rows : num_rows,
-                                        num_cols : num_cols,
-                                        now : glyph_sender::now_as_double()
-        };
-        events_loop.run(move |event, _, _| {
+        events_loop.run(move |event, _, control_flow| {
+            let next_frame_time = std::time::Instant::now() +
+                std::time::Duration::from_nanos(16_666_667);
+            *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+            
             match event {
+                
                 glutin::event::Event::WindowEvent { event, .. } => match event {
-                    glutin::event::WindowEvent::CloseRequested =>
-                        closed = true,
-                        _ => ()
+                    glutin::event::WindowEvent::CloseRequested => {
+                        *control_flow = glutin::event_loop::ControlFlow::Exit;
+                        return;
+                    },
+                    _ => ()
                 },
                 glutin::event::Event::DeviceEvent { event, .. } => match event {
                     glutin::event::DeviceEvent::Key(input) => {
                         if input.state == glutin::event::ElementState::Pressed {
                             match input.virtual_keycode {
-                                Some(glutin::event::VirtualKeyCode::Escape) => closed = true,
+                                Some(glutin::event::VirtualKeyCode::Escape) => {
+                                    *control_flow = glutin::event_loop::ControlFlow::Exit;
+                                    return;
+                                },
+                                _ => (),
                                 Some(glutin::event::VirtualKeyCode::A) => {
+                                    println!("a noticed!");
                                     let mut stream = glyph_sender::start_batch().unwrap();
                                     let mut glyph = GlyphSender::new()
                                         .fg(0.,0.,0.)
@@ -241,6 +250,12 @@ fn main() {
                                         .fg(0.,0.,0.)
                                         .glyph(' ');
 
+                                    let dc = effects::DrawContext { num_rows : num_rows,
+                                                                    num_cols : num_cols,
+                                                                    now : glyph_sender::now_as_double()
+                                    };
+
+                                    
                                     
                                     for c in 0..dc.num_cols {
                                         let step = 0.01;
